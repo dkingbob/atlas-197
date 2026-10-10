@@ -77,7 +77,24 @@ function matches(input, targetId, all) {
   return true;
 }
 
+/** The one place `input` designates (closest, no tie), or null. */
+function bestMatch(input, all) {
+  const plain = normalize(input);
+  if (plain.length < 2) return null;
+  const typed = { plain, sound: phoneticKey(input) };
+  let best = null, bestDistance = Infinity, tie = false;
+  for (const place of all) {
+    const d = distance(typed, place.variants);
+    if (d < bestDistance) { best = place.id; bestDistance = d; tie = false; } else if (d === bestDistance) tie = true;
+  }
+  if (bestDistance === Infinity || tie) return null;
+  if (plain.length < 4 && bestDistance > 0.25) return null;
+  return best;
+}
+
 export const Answers = {
+  /** Which country the player wrote (e.g. to say "you wrote Niger — that's this flag"), or null. */
+  findCountry: input => bestMatch(input, COUNTRY_VARIANTS),
   isCountry: (input, country) => matches(input, country.id, COUNTRY_VARIANTS),
   isCapital: (input, country) => matches(input, country.id, CAPITAL_VARIANTS),
   isWater: (input, water) => matches(stripWaterWords(input), water.id, WATER_VARIANTS),

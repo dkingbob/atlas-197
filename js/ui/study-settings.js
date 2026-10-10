@@ -1,0 +1,46 @@
+/**
+ * Settings form for Study mode (deck, new countries per session, capitals),
+ * shown inside the setup dialog.
+ *
+ *   renderStudySettings(settings)   → HTML
+ *   applyStudyClick(settings, e)    → true if the click changed settings
+ *   studyPoolLine(settings)         → { count, message } for the dialog footer
+ */
+import { CONTINENT_IDS } from '../config.js';
+import { escapeHtml } from '../core/utils.js';
+import { t, continentName } from '../i18n/i18n.js';
+import { STUDY_NEW_COUNTS, studySummary, whenText } from '../game/study.js';
+import { renderLevelChips } from './rush-settings.js';
+
+export function renderStudySettings(s) {
+  return `
+    <p class="note s-intro">${t('studyIntro')}</p>
+    <div class="d-sec"><h3>${t('studyNewCount')}</h3><div class="chips">${STUDY_NEW_COUNTS.map(n => `
+      <button class="chip ${s.newCount === n ? 'active' : ''}" data-study="newCount" data-val="${n}">${n}</button>`).join('')}</div>
+      <label class="switch"><input type="checkbox" data-study-option="capitals" ${s.capitals ? 'checked' : ''}>${t('studyCapitals')}</label>
+    </div>
+    ${renderLevelChips(s.levels, false, 'data-study-level')}
+    <div class="d-sec"><h3>${t('fContinents')}</h3><div class="chips">${CONTINENT_IDS.map(id => `
+      <button class="chip ${s.conts.includes(id) ? 'active' : ''}" data-study-cont="${id}">${continentName(id)}</button>`).join('')}</div></div>`;
+}
+
+const toggle = (list, value) => (list.includes(value) ? list.filter(x => x !== value) : list.concat(value));
+
+export function applyStudyClick(s, e) {
+  const setter = e.target.closest('[data-study]');
+  if (setter) { s[setter.dataset.study] = Number(setter.dataset.val); return true; }
+  const level = e.target.closest('[data-study-level]');
+  if (level) { s.levels = toggle(s.levels, Number(level.dataset.studyLevel)).sort(); return true; }
+  const cont = e.target.closest('[data-study-cont]');
+  if (cont) { s.conts = toggle(s.conts, cont.dataset.studyCont); return true; }
+  return false;
+}
+
+/** Footer line: "12 new · 3 to review · 5 mastered of 35". */
+export function studyPoolLine(s) {
+  const sum = studySummary(s);
+  const count = Math.min(sum.fresh, s.newCount) + sum.due;
+  if (count) return { count, message: t('studyDeckLine', sum) };
+  if (sum.nextDue) return { count: 0, message: t('studyAllDone', { when: escapeHtml(whenText(sum.nextDue)) }) };
+  return { count: 0, message: t('poolEmpty') };
+}

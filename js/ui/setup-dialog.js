@@ -1,7 +1,8 @@
 /**
  * "Start a game" dialog: mode, subject, answer type, question count and filters.
  * Calls onStart(config) — see game/pool.js for the config shape.
- * For Rush the config is { mode: 'rush', rush: <rush settings> } (see game/rush.js).
+ * For Rush the config is { mode: 'rush', rush: <rush settings> } (see game/rush.js),
+ * for Study { mode: 'study', study: <study settings> } (see game/study.js).
  */
 import { CONTINENT_IDS } from '../config.js';
 import { COUNTRIES } from '../data/countries/index.js';
@@ -13,21 +14,25 @@ import { buildCountryPool } from '../game/pool.js';
 import { DEFAULT_RUSH_SETTINGS, rushPoolSize } from '../game/rush.js';
 import { LEVEL_IDS } from '../data/difficulty.js';
 import { renderRushSettings, renderLevelChips, applyRushClick } from './rush-settings.js';
+import { DEFAULT_STUDY_SETTINGS } from '../game/study.js';
+import { renderStudySettings, applyStudyClick, studyPoolLine } from './study-settings.js';
 import { ICONS } from './icons.js';
 import { flagImage, Modal } from './components.js';
 
 const ID = 'setup-modal';
 const MODES = [
-  ['rush', ICONS.timer], ['world', ICONS.globe], ['continent', ICONS.map], ['oceans', ICONS.waves],
-  ['flagmatch', ICONS.flag], ['learn', ICONS.book], ['hard', ICONS.repeat],
+  ['study', ICONS.book], ['rush', ICONS.timer], ['world', ICONS.globe], ['continent', ICONS.map], ['oceans', ICONS.waves],
+  ['flagmatch', ICONS.flag], ['learn', ICONS.check], ['hard', ICONS.repeat],
 ];
 const COUNTS = [10, 20, 50, 0]; // 0 = all
+const copyStudy = r => ({ ...DEFAULT_STUDY_SETTINGS, ...(r || {}), levels: (r?.levels || DEFAULT_STUDY_SETTINGS.levels).slice(), conts: (r?.conts || DEFAULT_STUDY_SETTINGS.conts).slice() });
 const copyRush = r => ({ ...DEFAULT_RUSH_SETTINGS, ...(r || {}), levels: (r?.levels || DEFAULT_RUSH_SETTINGS.levels).slice(), conts: (r?.conts || DEFAULT_RUSH_SETTINGS.conts).slice() });
 
 const defaults = () => ({
   mode: 'world', subject: 'location', answer: 'click', continent: 'EUR', count: 20,
   conts: CONTINENT_IDS.slice(), levels: LEVEL_IDS.slice(), excluded: [], excludeKnown: false, onlyHard: false,
   rush: copyRush(),
+  study: copyStudy(),
 });
 
 let settings = defaults();
@@ -41,6 +46,7 @@ function open(overrides = {}) {
   if (!Array.isArray(settings.conts) || !settings.conts.length) settings.conts = CONTINENT_IDS.slice();
   if (!Array.isArray(settings.levels) || !settings.levels.length) settings.levels = LEVEL_IDS.slice();
   settings.rush = copyRush(settings.rush);
+  settings.study = copyStudy(settings.study);
   search = '';
   render();
   Modal.open(ID);
@@ -49,6 +55,7 @@ function open(overrides = {}) {
 /** Settings → game config (capital is meaningless for oceans). */
 function toConfig() {
   if (settings.mode === 'rush') return { mode: 'rush', rush: copyRush(settings.rush) };
+  if (settings.mode === 'study') return { mode: 'study', study: copyStudy(settings.study) };
   const subject = settings.mode === 'oceans' && settings.subject === 'capital' ? 'location' : settings.subject;
   return {
     mode: settings.mode, subject, answer: settings.answer, continent: settings.continent, count: settings.count,
@@ -113,7 +120,7 @@ function render() {
       <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
       <h2>${t('setupTitle')}</h2><p class="lead">${t('setupLead')}</p>
       <div class="d-sec"><h3>${t('mode')}</h3>${modeCards()}</div>
-      ${mode === 'rush' ? renderRushSettings(settings.rush) : classicSections(note)}
+      ${mode === 'rush' ? renderRushSettings(settings.rush) : mode === 'study' ? renderStudySettings(settings.study) : classicSections(note)}
       <div class="d-foot">
         <span class="pool" id="pool-line"></span>
         <button class="btn btn-soft" data-act="close">${t('cancel')}</button>
@@ -145,7 +152,9 @@ function updatePoolLine() {
   const line = $('#pool-line', modal());
   if (!line) return;
   let count, message;
-  if (settings.mode === 'rush') {
+  if (settings.mode === 'study') {
+    ({ count, message } = studyPoolLine(settings.study));
+  } else if (settings.mode === 'rush') {
     count = rushPoolSize(settings.rush);
     message = count ? t('poolCount', { n: count }) : t('poolEmpty');
   } else if (settings.mode === 'oceans') {
@@ -167,6 +176,7 @@ function updatePoolLine() {
 function onClick(e) {
   if (e.target === modal()) return Modal.close(ID);
   if (settings.mode === 'rush' && applyRushClick(settings.rush, e)) return render();
+  if (settings.mode === 'study' && applyStudyClick(settings.study, e)) return render();
 
   const levelChip = e.target.closest('[data-level]');
   if (levelChip) {
@@ -217,6 +227,10 @@ function onChange(e) {
     const excluded = new Set(settings.excluded);
     if (input.checked) excluded.delete(input.dataset.country); else excluded.add(input.dataset.country);
     settings.excluded = [...excluded];
+    updatePoolLine();
+  }
+  if (input.dataset.studyOption) {
+    settings.study[input.dataset.studyOption] = input.checked;
     updatePoolLine();
   }
   if (input.dataset.option) {

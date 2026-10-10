@@ -17,6 +17,7 @@
  *   labelLonLat   where the name label goes
  *   markerLonLat  where the clickable circle goes (small places only)
  *   isSmall       true → also gets a clickable marker circle
+ *   neighbors     ids of the countries sharing a land border (countries only)
  */
 import { CONFIG } from '../config.js';
 import { COUNTRIES, COUNTRY_BY_ID } from '../data/countries/index.js';
@@ -42,17 +43,21 @@ export function buildMapRecords(topology) {
   // 1. Sort every map shape into a country (possibly several shapes) or a territory
   const shapesByCountry = new Map();
   const territoryShapes = [];
-  for (const geometry of topology.objects.countries.geometries) {
+  const geometries = topology.objects.countries.geometries;
+  const countryOfShape = new Array(geometries.length).fill(null);
+  geometries.forEach((geometry, index) => {
     const name = normalize(geometry.properties?.name);
-    if (skipped.has(name)) continue;
+    if (skipped.has(name)) return;
     const country = countryByMapName.get(name) || COUNTRY_BY_ID.get(mergeInto.get(name));
     if (country) {
+      countryOfShape[index] = country.id;
       if (!shapesByCountry.has(country.id)) shapesByCountry.set(country.id, []);
       shapesByCountry.get(country.id).push(geometry);
     } else {
       territoryShapes.push(geometry);
     }
-  }
+  });
+  const neighborsOf = landNeighbors(topology, countryOfShape);
 
   // 2. Countries (merged shapes are dissolved into one outline)
   for (const country of COUNTRIES) {
@@ -67,6 +72,7 @@ export function buildMapRecords(topology) {
     add({
       kind: 'country', id: country.id, country, continent: country.continent,
       flagCode: country.id.toLowerCase(), feature, fixedLonLat: country.markerAt,
+      neighbors: neighborsOf.get(country.id) || [],
     });
   }
 
@@ -81,6 +87,31 @@ export function buildMapRecords(topology) {
     });
   }
   return records;
+}
+
+/**
+ * Countries sharing a border, from the shared arcs of the TopoJSON.
+ * Borders reached only through an overseas part (France ↔ Brazil via
+ * French Guiana) are left out.
+ */
+function landNeighbors(topology, countryOfShape) {
+  const adjacency = topojson.neighbors(topology.objects.countries.geometries);
+  const result = new Map();
+  adjacency.forEach((list, index) => {
+    const id = countryOfShape[index];
+    if (!id) return;
+    const set = result.get(id) || new Set();
+    for (const other of list) {
+      const otherId = countryOfShape[other];
+      if (!otherId || otherId === id) continue;
+      if (SPLITS[id] || SPLITS[otherId]) {
+        if (COUNTRY_BY_ID.get(id).continent !== COUNTRY_BY_ID.get(otherId).continent) continue;
+      }
+      set.add(otherId);
+    }
+    result.set(id, set);
+  });
+  return new Map([...result].map(([id, set]) => [id, [...set]]));
 }
 
 /** Cut overseas parts out of a country (e.g. French Guiana out of France). */

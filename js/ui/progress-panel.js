@@ -1,12 +1,15 @@
 /**
- * "My progress" dialog: % of countries known per continent, accuracy per
- * subject, the hard list, and a reset button.
+ * "My progress" dialog: % of countries known per continent, Study mode
+ * memory (mastered / learning / due), accuracy per subject, the hard list,
+ * and a reset button.
  */
 import { CONTINENT_IDS } from '../config.js';
 import { COUNTRIES, COUNTRY_BY_ID } from '../data/countries/index.js';
 import { Store } from '../core/store.js';
 import { $, escapeHtml } from '../core/utils.js';
 import { t, lang, countryName, continentName } from '../i18n/i18n.js';
+import { deckSummary } from '../game/srs.js';
+import { whenText } from '../game/study.js';
 import { ICONS } from './icons.js';
 import { flagImage, Modal, Toast } from './components.js';
 
@@ -28,6 +31,17 @@ function knownSection() {
   }).join('');
   const all = progressBar(t('overall'), COUNTRIES.filter(c => known.has(c.id)).length, COUNTRIES.length);
   return `<div class="cont-bars">${rows}<div style="height:4px"></div>${all}</div>`;
+}
+
+/** Study mode: how many countries are in long-term memory. */
+function studySection() {
+  const s = deckSummary(COUNTRIES.map(c => c.id), Store.srsCards(), Date.now());
+  if (s.fresh === s.total) return `<p class="empty">${t('studyNone')}</p>`;
+  const stat = (n, label) => `<div class="stat"><b>${n}</b><span>${label}</span></div>`;
+  return `<div class="stats">
+    ${stat(s.mastered, t('studyMastered'))}${stat(s.learning, t('studyInProgress'))}
+    ${stat(s.due, t('studyDueNow'))}${stat(s.due ? t('today') : s.nextDue ? whenText(s.nextDue) : '—', t('studyNextReview'))}
+  </div>`;
 }
 
 function accuracySection() {
@@ -63,6 +77,7 @@ function render() {
       <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
       <h2>${t('progTitle')}</h2><p class="lead">${t('progLead')}</p>
       <div class="d-sec"><h3>${t('knownByCont')}</h3>${knownSection()}</div>
+      <div class="d-sec"><h3>${t('studyMemory')}</h3>${studySection()}</div>
       <div class="d-sec"><h3>${t('bySubject')}</h3>${accuracySection()}</div>
       <div class="d-sec"><h3>${t('hardList')} (${hard.length})</h3>${hardListSection(hard)}</div>
       <div class="d-foot"><span class="pool"></span>

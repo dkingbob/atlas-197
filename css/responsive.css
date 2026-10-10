@@ -55,3 +55,13 @@
   .p-code-big{font-size:26px}
   .p-room{flex-wrap:wrap}
 }
+@media (max-width:720px){
+  #study-card{bottom:8px;padding:12px 14px}
+  #study-hud{gap:9px;padding:7px 8px 7px 12px;font-size:13px}
+  #study-hud .hud-stat span{display:inline;font-size:9.5px}
+  .s-flag img{width:96px;height:64px}
+  .s-info h2{font-size:22px}
+  .s-learn{gap:12px}
+  .s-hook{display:none}
+  .s-recall-flag > img{width:110px;height:74px}
+}

@@ -4,7 +4,7 @@
  * the explore panel, the setup dialog, the progress panel and the games.
  *
  *   Explore  click a place → CountryPanel
- *   Play     SetupDialog → Game (classic modes) or Rush (timed modes)
+ *   Play     SetupDialog → Game (classic modes), Rush (timed modes) or Study (learning)
  *   Party    PartyDialog → Lobby (net/) → Rush, with friends
  *   Progress ProgressPanel
  */
@@ -23,6 +23,7 @@ import { SetupDialog } from './ui/setup-dialog.js';
 import { Modal, Toast } from './ui/components.js';
 import { Game } from './game/game.js';
 import { Rush } from './game/rush.js';
+import { Study } from './game/study.js';
 import { PartyDialog } from './ui/party-dialog.js';
 
 let inGame = false;
@@ -50,6 +51,7 @@ function setLanguage(newLang) {
   PartyDialog.refresh();
   Game.refresh();
   Rush.refresh();
+  Study.refresh();
 }
 
 /* ---------- display mode (flags / gray) & names ---------- */
@@ -62,8 +64,8 @@ function syncHeaderButtons() {
 }
 
 /** Flags would give the answer away in Rush and in most classic modes. */
-const flagsAllowed = () => !Rush.isRunning() && Game.flagsAllowed();
-const anyGameActive = () => Game.isActive() || Rush.isRunning();
+const flagsAllowed = () => !Rush.isRunning() && !Study.isRunning() && Game.flagsAllowed();
+const anyGameActive = () => Game.isActive() || Rush.isRunning() || Study.isRunning();
 
 function setDisplay(mode) {
   if (inGame && !flagsAllowed()) return Toast.show(t('flagOff'));
@@ -102,6 +104,7 @@ function bindHeader() {
     if (target === 'explore') {
       if (Game.isActive()) Game.quit();
       if (Rush.isRunning() && !PartyDialog.isInParty()) { Modal.close('rush-end-modal'); Rush.stop(); }
+      if (Study.isRunning()) { Modal.close('study-end-modal'); Study.stop(); }
       Modal.close('setup-modal');
       Modal.close('party-modal');
       Modal.close('progress-modal');
@@ -115,7 +118,7 @@ function bindHeader() {
       SetupDialog.open();
     }
     if (target === 'party') {
-      if (Game.isActive()) return Toast.show(t('gameRunning'));
+      if (Game.isActive() || Study.isRunning()) return Toast.show(t('gameRunning'));
       Modal.close('setup-modal');
       Modal.close('progress-modal');
       CountryPanel.close();
@@ -155,6 +158,7 @@ function bindMap() {
   MapView.onPlaceClick(rec => {
     if (Game.isActive()) return Game.onPlaceClick(rec);
     if (Rush.isRunning()) return Rush.onPlaceClick(rec);
+    if (Study.isRunning()) return Study.onPlaceClick(rec);
     if (Modal.isOpen('end-modal')) return;
     explorePlace(rec);
   });
@@ -172,7 +176,13 @@ async function boot() {
   if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return showLoadError();
 
   CountryPanel.init();
-  SetupDialog.init({ onStart: config => (config.mode === 'rush' ? Rush.start({ settings: config.rush }) : Game.start(config)) });
+  SetupDialog.init({
+    onStart: config => {
+      if (config.mode === 'rush') Rush.start({ settings: config.rush });
+      else if (config.mode === 'study') Study.start(config.study);
+      else Game.start(config);
+    },
+  });
   PartyDialog.init();
   ProgressPanel.init({
     onPlayHardList: () => SetupDialog.open({ mode: 'hard' }),
@@ -180,6 +190,7 @@ async function boot() {
   });
   Game.init({ onModeChange: setGameMode });
   Rush.init({ onModeChange: setGameMode });
+  Study.init({ onModeChange: setGameMode });
   bindHeader();
   bindGlobalKeys();
   bindMap();
@@ -201,7 +212,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 

@@ -4,6 +4,7 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 
 - **Explore** the map: hover a country to see its name, click it for its flag, capital, a short history and 3 key facts.
 - **Play** 6 game modes × 3 subjects (country name, capital, location) × 3 answer types (click the map, type, multiple choice).
+- **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition).
 - **Rush**: timed rounds — name as many countries as you can before the clock runs out. 5 types: *flag on the map*, *flag only*, *capitals*, *map hunt*, *survival*.
 - **Party**: play Rush with up to 4 friends. The host picks the settings, everyone gets the same countries, live scoreboard, final ranking. Share a 5-letter room code or an invite link.
 - **5 difficulty levels** (easy → very hard). Harder countries are worth more points (10 / 15 / 20 / 30 / 50) and every mode can be filtered by level.
@@ -77,6 +78,7 @@ js/
     country-panel.js    Explore panel
     setup-dialog.js     "Start a game" dialog and filters
     rush-settings.js    Rush settings form (shared by solo setup and party lobby)
+    study-settings.js   Study settings form (deck, new per session, capitals)
     party-dialog.js     Party: create/join a room, lobby, countdown, results
     progress-panel.js   "My progress" dialog
     components.js       Flag image, toast, modal helpers
@@ -86,6 +88,8 @@ js/
     question-round.js   Click / type / multiple-choice questions
     flag-match.js       Drag & drop flags
     pool.js             Which countries a game uses (filters, hard-list weighting)
+    study.js            Study mode: see → write → recall → fix (active recall)
+    srs.js              Spaced repetition: Leitner boxes + in-session queue (pure logic)
     rush.js             Timed Rush rounds (solo and party)
   net/
     peer-transport.js   PeerJS (WebRTC) loading and connections
@@ -95,6 +99,8 @@ tests/
   e2e.test.mjs          Plays every mode in a headless browser
   answers.test.mjs      Typed-answer matching (runs in Node)
   rush.test.mjs         Every Rush type, scoring, hints, timer
+  srs.test.mjs          Spaced-repetition scheduling (runs in Node)
+  study.test.mjs        Study mode: see, write, recall, fix, reviews
   party.test.mjs        4 browsers in one room (+ a refused 5th)
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
@@ -114,6 +120,22 @@ main.js ──► MapView (map)         click on a place ──► CountryPanel 
 ```
 
 Modules never reach into each other's DOM: they talk through the small APIs exported at the bottom of each file (`MapView.setState(...)`, `Game.start(config)`, …). `main.js` passes callbacks between them so there are no circular imports.
+
+### How Study mode helps you remember
+
+| Technique | In the app |
+|---|---|
+| Active recall | You type the name and click the place from memory, with the map fully gray |
+| Generation | You write each new name once while you look at it |
+| Spacing | A new country is asked again only after other ones, with growing gaps (2 → 3 → 6 questions) |
+| Mastery before moving on | Each new country must be recalled right twice; a mistake resets that |
+| Immediate correction | After a mistake you must write / click the right answer before going on |
+| Discrimination | Writing another country's name shows both flags side by side ("You wrote Niger: that's this flag") |
+| Elaboration | Capital, neighbours (computed from the map borders) and a memorable fact for each country |
+| Chunking + interleaving | At most 4 new countries at a time, mixed with reviews; easy → hard, grouped by region |
+| Spaced repetition | Leitner boxes: right → 1, 2, 4, 8, 16, 32, 64 days; wrong → back to tomorrow |
+
+Saved per country in `Store` (`srs` field). The scheduling is in `js/game/srs.js` and is covered by `tests/srs.test.mjs`.
 
 ### How Party works (no game server)
 

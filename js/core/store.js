@@ -15,6 +15,7 @@
  *   known    { [countryId]: timestamp }       countries marked "I know this"
  *   hard     { [countryId]: weight 1..9 }     "I can't remember" list (higher = asked more)
  *   stats    { [countryId]: { name|capital|location: { seen, ok, ko } } }
+ *   srs      { [countryId]: { box 1..7, due: timestamp, lapses, last } }   Study mode (see game/srs.js)
  */
 import { CONFIG } from '../config.js';
 import { clamp } from './utils.js';
@@ -38,6 +39,7 @@ function defaultState() {
     known: {},
     hard: {},
     stats: {},
+    srs: {},
   };
 }
 
@@ -103,6 +105,10 @@ export const Store = {
     save();
   },
   allStats: () => state.stats,
+
+  /* Study mode: spaced-repetition cards */
+  srsCards: () => state.srs,
+  setSrsCard(id, card) { state.srs[id] = card; save(); },
 
   /** Erase progress but keep language and display preferences. */
   reset() {
