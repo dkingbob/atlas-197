@@ -14,7 +14,9 @@
 import { CONFIG } from '../config.js';
 import { COUNTRY_BY_ID } from '../data/countries/index.js';
 import { $, clamp, debounce, escapeHtml } from '../core/utils.js';
-import { t, countryName, territoryName, waterName } from '../i18n/i18n.js';
+import { t, countryName, capitalName, territoryName, waterName } from '../i18n/i18n.js';
+import { STATS } from '../data/facts/stats.js';
+import { levelOf } from '../data/difficulty.js';
 import { buildMapRecords } from './map-data.js';
 import { buildWaterShapes } from './water-shapes.js';
 import { createFlagFills } from './flags.js';
@@ -25,6 +27,8 @@ const MAX_PREVIEW_SCALE = 3;         // beyond this the stretched preview gets b
 const MIN_PREVIEW_SCALE = 0.5;
 const MAX_PREVIEW_SHIFT = 0.5;       // fraction of the screen before undrawn edges show → redraw
 const LABEL_FONT_PX = 11.5;
+const CAPITAL_FONT_PX = 10.5;
+const CAPITAL_DOT_PX = 3.2;
 const MARKER_R = { country: 5.2, territory: 3.6 };
 const MARKER_HIT_R = { country: 11, territory: 7 };
 
@@ -35,7 +39,9 @@ const recordByKey = new Map();
 let waters = [];                      // { water, feature, el, labels[] }
 
 let wrap, layer, svg, root, defs, shadow, tooltip;
-let gWaters, gLand, gMarkers, gWaterLabels, gLabels;
+let gWaters, gLand, gMarkers, gWaterLabels, gLabels, gCapitals;
+let capitals = [];          // [{ country, lonLat, xy, g, text, width }] — "Capitals" display
+let showCapitals = false;
 let flags, highlight, zoom;
 let width = 0, height = 0, projection, path;
 let center = CONFIG.DEFAULT_CENTER;
@@ -73,6 +79,7 @@ function init(topology) {
   gMarkers = root.append('g').attr('class', 'markers');
   gWaterLabels = root.append('g').attr('class', 'wlabels');
   gLabels = root.append('g').attr('class', 'labels');
+  gCapitals = root.append('g').attr('class', 'capitals').style('display', 'none');
 
   flags = createFlagFills(defs);
   highlight = createHighlightLayer(layer);
@@ -83,6 +90,7 @@ function init(topology) {
     if (rec.id) recordById.set(rec.id, rec);
     createElements(rec);
   });
+  createCapitals();
   waters = buildWaterShapes().map(({ water, feature }) => ({
     water, feature,
     el: gWaters.append('path').attr('class', 'water').attr('data-water', water.id).node(),
@@ -157,6 +165,7 @@ function render() {
     rec.labelEl.setAttribute('y', ly);
     flags.fit(rec);
   }
+  placeCapitals();
   for (const w of waters) {
     w.el.setAttribute('d', path(w.feature) || '');
     w.water.label.forEach((lonLat, i) => {
@@ -298,6 +307,88 @@ function updateLabels() {
     }
     rec.labelEl.style.display = visible ? '' : 'none';
   }
+  updateCapitals(); // capital names avoid the country names shown above
+}
+
+/* =====================================================================
+   CAPITALS DISPLAY — a dot and the name of every capital city
+   ===================================================================== */
+function createCapitals() {
+  for (const rec of records) {
+    const lonLat = rec.kind === 'country' && STATS[rec.id]?.capitalLonLat;
+    if (!lonLat) continue;
+    const g = gCapitals.append('g').attr('class', 'cap');
+    g.append('rect').attr('class', 'cap-dot');
+    const text = g.append('text').attr('class', 'cap-lbl').node();
+    capitals.push({ rec, lonLat, g: g.node(), text, width: 0 });
+  }
+}
+
+function placeCapitals() {
+  for (const c of capitals) {
+    c.xy = projection(c.lonLat);
+    c.g.setAttribute('transform', `translate(${c.xy[0]},${c.xy[1]})`);
+  }
+}
+
+function capitalTexts() {
+  measureCtx.font = `700 ${CAPITAL_FONT_PX}px Manrope, system-ui, sans-serif`;
+  for (const c of capitals) {
+    c.text.textContent = capitalName(c.rec.country);
+    c.width = measureCtx.measureText(c.text.textContent).width;
+  }
+}
+
+/** Screen boxes [x0, y0, x1, y1] of the country names currently shown. */
+function countryLabelBoxes(k) {
+  const boxes = [];
+  for (const rec of records) {
+    if (rec.labelEl.style.display === 'none') continue;
+    const x = Number(rec.labelEl.getAttribute('x')) * k, y = Number(rec.labelEl.getAttribute('y')) * k;
+    const besideMarker = rec.labelEl.style.textAnchor === 'start';
+    const x0 = besideMarker ? x + 8 : x - rec.labelWidth / 2;
+    boxes.push([x0, y - 7, x0 + rec.labelWidth, y + 7]);
+  }
+  return boxes;
+}
+
+const overlaps = (box, list) => list.some(o => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1]);
+
+/**
+ * Show every capital dot, and the names that fit: better-known countries
+ * first, on the right of the dot or else on the left; a name is hidden when
+ * it would cover a country name, another capital name or a dot.
+ */
+function updateCapitals() {
+  if (!showCapitals) return;
+  const k = transform.k;
+  const size = (width < 600 ? CAPITAL_DOT_PX * 0.7 : CAPITAL_DOT_PX) / k;
+  gCapitals.attr('font-size', CAPITAL_FONT_PX / k).attr('stroke-width', 3 / k);
+  const dots = capitals.map(c => {
+    const [sx, sy] = [c.xy[0] * k, c.xy[1] * k];
+    return [sx - 3, sy - 3, sx + 3, sy + 3];
+  });
+  const taken = countryLabelBoxes(k);
+  const order = capitals.map((c, i) => ({ c, i })).sort((a, b) => levelOf(a.c.rec.id) - levelOf(b.c.rec.id));
+  for (const { c, i } of order) {
+    const dot = c.g.firstChild;
+    dot.setAttribute('x', -size); dot.setAttribute('y', -size);
+    dot.setAttribute('width', size * 2); dot.setAttribute('height', size * 2);
+    const [sx, sy] = [c.xy[0] * k, c.xy[1] * k];
+    const others = dots.filter((_, j) => j !== i);
+    const right = [sx + 5, sy - 6, sx + 7 + c.width, sy + 6];
+    const left = [sx - 7 - c.width, sy - 6, sx - 5, sy + 6];
+    const side = [right, left].find(box => !overlaps(box, taken) && !overlaps(box, others));
+    c.text.style.display = side ? '' : 'none';
+    if (side) {
+      taken.push(side);
+      const onRight = side === right;
+      c.text.setAttribute('x', (onRight ? 6 : -6) / k);
+      c.text.style.textAnchor = onRight ? 'start' : 'end';
+      c.text.setAttribute('y', 3.5 / k);
+    }
+    c.g.classList.toggle('dim', Boolean(c.rec.dimmed));
+  }
 }
 
 function refreshLanguage() {
@@ -307,7 +398,9 @@ function refreshLanguage() {
     rec.labelWidth = textWidth(rec.labelText) * (rec.kind === 'territory' ? 0.9 : 1);
   }
   for (const w of waters) w.labels.forEach(label => { label.textContent = waterName(w.water); });
+  capitalTexts();
   updateLabels();
+  updateCapitals();
 }
 
 /* =====================================================================
@@ -443,6 +536,12 @@ export const MapView = {
   /** 'all' = labels + tooltips · 'revealed' = only revealed places · 'none' = never */
   setNameMode(mode) { nameMode = mode; updateLabels(); },
   setWaterLabels(on) { showWaterLabels = on; updateForScale(); },
+  /** Show a dot and the name of every capital city. */
+  setCapitals(on) {
+    showCapitals = Boolean(on);
+    gCapitals.style('display', showCapitals ? null : 'none');
+    updateCapitals();
+  },
 
   /** Gray mode: show this place's flag and name. */
   reveal(rec) { rec.revealed = true; flags.apply(rec, true); updateLabels(); },

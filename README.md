@@ -6,7 +6,8 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 - **Play** 6 game modes × 3 subjects (country name, capital, location) × 3 answer types (click the map, type, multiple choice).
 - **Flags**: a flag pops up — write (or say, with the microphone) the country. *Practice* is endless with "show answer" and a letters hint; *Game* has 3 lives and 1 hint.
 - **Facts**: read clues and guess the country (or its capital). *Normal* starts with the 3 key facts; *Hard* starts with 3 historical facts out of 20+ per country. Ask for more clues — each one costs points.
-- **Capitals** button: games only about capitals, including **Capital pin** (click where the city is — points by distance).
+- **Capitals** display button (top right, next to *Names*): shows a dot and the name of every capital city on the map.
+- **Capitals** button (in the menu): games only about capitals, including **Capital pin** (click where the city is — points by distance).
 - **Endless (∞) or custom** number of questions in every quiz.
 - **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition). Before the new countries you can choose a **recap**: a quiz on everything seen, or an automatic slideshow (map + flag + name, read aloud if you want) with a 0.75× – 2× speed slider.
 - **Rush**: timed rounds — name as many countries as you can before the clock runs out. 5 types: *flag on the map*, *flag only*, *capitals*, *map hunt*, *survival*.

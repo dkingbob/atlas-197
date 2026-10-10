@@ -73,3 +73,8 @@
 .fx-pin.answer{fill:var(--ok)}
 .fx-pin.city{fill:var(--ink)}
 .fx-pinline{stroke:var(--ink);fill:none;opacity:.7}
+/* "Capitals" display: square dot + name of every capital (names that would overlap are hidden) */
+#map .capitals{pointer-events:none}
+#map .cap-dot{fill:#13233a;stroke:#fff;stroke-width:1.2px;vector-effect:non-scaling-stroke}
+#map .cap-lbl{font-family:var(--font);font-weight:700;font-style:italic;fill:#7a3e00;paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-linejoin:round}
+#map .cap.dim{opacity:.3}

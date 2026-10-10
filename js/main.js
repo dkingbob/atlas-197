@@ -43,6 +43,10 @@ function applyStaticTexts() {
   const namesButton = $('#names-btn');
   namesButton.classList.toggle('off', !namesOn);
   namesButton.title = namesOn ? t('namesOnTip') : t('namesOffTip');
+  const capitalsOn = Boolean(Store.pref('capitals'));
+  const capitalsButton = $('#capitals-btn');
+  capitalsButton.classList.toggle('off', !capitalsOn);
+  capitalsButton.title = capitalsOn ? t('capitalsOnTip') : t('capitalsOffTip');
   if (!$('#loader').classList.contains('error')) $('#loader-msg').textContent = t('loading');
 }
 
@@ -67,6 +71,7 @@ function syncHeaderButtons() {
     b.disabled = inGame && !flagsAllowed() && b.dataset.display === 'flag';
   });
   $('#names-btn').disabled = inGame;
+  $('#capitals-btn').disabled = inGame;
 }
 
 /** Flags would give the answer away in Rush and in most classic modes. */
@@ -91,8 +96,17 @@ function toggleNames() {
   applyStaticTexts();
 }
 
+/** "Capitals" display: a dot and the name of every capital (hidden during games — it would give answers away). */
+function toggleCapitals() {
+  if (inGame) return;
+  Store.setPref('capitals', !Store.pref('capitals'));
+  MapView.setCapitals(Store.pref('capitals'));
+  applyStaticTexts();
+}
+
 function setGameMode(on) {
   inGame = on;
+  MapView.setCapitals(!on && Store.pref('capitals'));
   document.body.classList.toggle('in-game', on);
   const playing = on ? (PartyDialog.isInParty() ? 'party' : playNav) : 'explore';
   $$('#nav [data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === playing));
@@ -147,6 +161,7 @@ function bindHeader() {
     if (button && !button.disabled) setDisplay(button.dataset.display);
   });
   $('#names-btn').addEventListener('click', toggleNames);
+  $('#capitals-btn').addEventListener('click', toggleCapitals);
   $('#lang-seg').addEventListener('click', e => {
     const button = e.target.closest('[data-lang]');
     if (button) setLanguage(button.dataset.lang);
@@ -238,6 +253,7 @@ async function boot() {
     MapView.init(topology);
     MapView.setDisplay(Store.pref('display') === 'flag' ? 'flag' : 'gray');
     MapView.setNameMode(Store.pref('names') ? 'all' : 'revealed');
+    MapView.setCapitals(Store.pref('capitals'));
     syncHeaderButtons();
     $('#loader').classList.add('hide');
     const room = new URLSearchParams(location.search).get('room');

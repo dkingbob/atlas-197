@@ -186,6 +186,9 @@ export const STRINGS = {
     rcPause: "Pause",
     rcPlay: "Play",
     rcPrevious: "Previous",
+    // capitals display
+    capitalsOnTip: "Hide the capital cities",
+    capitalsOffTip: "Show every capital city on the map",
     // party (multiplayer)
     party: 'Party', partyTitle: 'Play with friends', partyLead: 'Up to 4 players. Everyone gets the same countries at the same time.',
     nickname: 'Your name', nicknamePh: 'e.g. Sam', createRoom: 'Create a room', joinRoom: 'Join', roomCode: 'Room code', roomCodePh: 'ABCDE',
@@ -381,6 +384,9 @@ export const STRINGS = {
     rcPause: "Pause",
     rcPlay: "Lecture",
     rcPrevious: "Précédent",
+    // capitals display
+    capitalsOnTip: "Masquer les capitales",
+    capitalsOffTip: "Afficher toutes les capitales sur la carte",
     // party (multijoueur)
     party: 'Multi', partyTitle: 'Jouer entre amis', partyLead: 'Jusqu’à 4 joueurs. Tout le monde a les mêmes pays en même temps.',
     nickname: 'Votre nom', nicknamePh: 'ex. Sam', createRoom: 'Créer un salon', joinRoom: 'Rejoindre', roomCode: 'Code du salon', roomCodePh: 'ABCDE',

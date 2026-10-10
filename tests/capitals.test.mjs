@@ -80,6 +80,21 @@ test('Capitals button: only capital games, and they are about capitals', async (
   await page.click('#rush-hud [data-act="quit"]');
 });
 
+test('Capitals display button: every capital on the map, hidden during games', async () => {
+  await page.click('#capitals-btn');
+  assert.equal(await page.$$eval('#map .capitals .cap', els => els.length), 197);
+  assert.ok(await page.$eval('#map .capitals', g => g.style.display !== 'none'));
+  const shown = await page.$$eval('#map .cap-lbl', els => els.filter(e => e.style.display !== 'none').length);
+  assert.ok(shown > 60, `${shown} capital names fit at world zoom`);
+  await page.evaluate(() => Facts.start({ difficulty: 'normal', guess: 'capital', answer: 'type', count: 3, levels: [1], conts: ['EUR'] }));
+  assert.ok(await page.$eval('#map .capitals', g => g.style.display === 'none'), 'hidden in games');
+  assert.ok(await page.$eval('#capitals-btn', b => b.disabled));
+  await page.evaluate(() => Facts.stop());
+  assert.ok(await page.$eval('#map .capitals', g => g.style.display !== 'none'), 'back after the game');
+  await page.click('#capitals-btn');
+  assert.ok(await page.$eval('#map .capitals', g => g.style.display === 'none'));
+});
+
 test('no console errors', () => {
   assert.deepEqual(errors, []);
 });
