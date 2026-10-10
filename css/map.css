@@ -1,0 +1,69 @@
+/* =====================================================================
+   MAP
+   Ocean, land, markers, labels, highlight layer and tooltip.
+
+   Performance rule: nothing inside svg#map is animated or transitioned.
+   Any change inside it repaints all ~240 country shapes, so hover lift and
+   pulsing targets are drawn on the separate .fx-layer instead.
+   ===================================================================== */
+#map-wrap{position:fixed;inset:0;overflow:hidden;background:var(--ocean);touch-action:none}
+/* Moved with a CSS transform while zooming (see map-view.js "smooth zoom") */
+#map-layer{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+#map{width:100%;height:100%;display:block;background:var(--ocean);user-select:none;-webkit-user-select:none}
+#map .bg{fill:var(--ocean)}
+
+/* Oceans & seas (only visible when highlighted in a game) */
+#map .water{fill:var(--water-hi);opacity:0;pointer-events:none}
+#map .water.on{opacity:.7}
+#map .water.hint{opacity:.35}
+#map .water.ok{opacity:.9;fill:var(--ok)}
+
+/* Countries and territories */
+#map .country,#map .terr{stroke:var(--border);stroke-width:.6px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#map .country{fill:var(--land);cursor:pointer}
+#map .terr{fill:var(--terr);cursor:help}
+#map .flagged{fill:var(--flag)}
+#map .country.target{fill:var(--accent)}
+#map.mode-flag .country.target.flagged{fill:var(--flag);stroke:var(--accent);stroke-width:3px}
+#map .country.matched{fill:#62c58a}
+#map .flash-ok{fill:var(--ok) !important}
+#map .flash-bad{fill:var(--bad) !important}
+#map .dim{opacity:.22;pointer-events:none}
+
+/* Clickable circles for small countries (and small territories when zoomed in) */
+#map .marker{cursor:pointer}
+#map .marker .hit{fill:transparent;stroke:none}
+#map .marker .dot{fill:#fff;stroke:var(--land-dark);stroke-width:1.6px;vector-effect:non-scaling-stroke}
+#map .marker.flagged .dot{fill:var(--flag-dot);stroke:#fff}
+#map .marker.t-marker .dot{fill:#eef2f6;stroke:#94a3b5;stroke-dasharray:2 2}
+#map .marker.target .dot{fill:var(--accent);stroke:#fff}
+#map .marker.matched .dot{fill:#62c58a}
+#map .marker.flash-ok .dot{fill:var(--ok) !important}
+#map .marker.flash-bad .dot{fill:var(--bad) !important}
+
+/* Labels */
+#map .lbl{font-family:var(--font);font-weight:700;fill:#1c2a3b;paint-order:stroke;stroke:rgba(255,255,255,.82);stroke-linejoin:round;
+  text-anchor:middle;dominant-baseline:central;pointer-events:none;letter-spacing:.01em}
+#map.mode-flag .lbl{stroke:rgba(255,255,255,.95)}
+#map .lbl.t-lbl{font-style:italic;font-weight:600;fill:#4b5c70;font-size:.88em}
+#map .lbl.s-lbl{text-anchor:start}
+#map .lbl.dim{opacity:.35}
+#map .wlbl{font-family:var(--display);font-style:italic;font-weight:500;fill:#5a82aa;text-anchor:middle;dominant-baseline:central;pointer-events:none;letter-spacing:.06em}
+#map .wlbl.ocean{letter-spacing:.32em;text-transform:uppercase;fill:#6f97be}
+
+/* Highlight layer: hover lift + pulsing game targets (its own GPU layer) */
+.fx-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;will-change:transform}
+.fx-lift{stroke:#fff;stroke-width:.8px;vector-effect:non-scaling-stroke;stroke-linejoin:round;transform-box:fill-box;transform-origin:center;
+  filter:url(#liftShadow);animation:fx-lift .16s ease-out forwards}
+.fx-dot{stroke:var(--land-dark);stroke-width:1.6px}
+.fx-pulse{fill:none;stroke:var(--accent);stroke-width:3px;vector-effect:non-scaling-stroke;stroke-linejoin:round;animation:fx-pulse 1.4s ease-in-out infinite}
+.fx-ring{fill:none;stroke:var(--accent);stroke-width:2.5px;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;animation:fx-ring 1.4s ease-out infinite}
+@keyframes fx-lift{from{transform:scale(1)}to{transform:scale(var(--lift))}}
+@keyframes fx-pulse{50%{stroke-opacity:.2}}
+@keyframes fx-ring{from{transform:scale(1);opacity:1}to{transform:scale(2.4);opacity:0}}
+
+/* Tooltip */
+#tooltip{position:fixed;z-index:50;pointer-events:none;padding:7px 11px;border-radius:10px;background:rgba(19,35,58,.94);color:#fff;font-size:13px;font-weight:700;
+  white-space:nowrap;transform:translate(-50%,calc(-100% - 14px));opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+#tooltip.show{opacity:1}
+#tooltip small{display:block;font-weight:500;opacity:.75;font-size:11.5px}

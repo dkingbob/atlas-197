@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atlas 197 — World Geography Trainer</title>
+<meta name="description" content="Learn all 197 countries: flags, capitals and locations. Interactive map, quizzes, flag match and progress tracking. English / Français.">
+<meta name="theme-color" content="#d4e5f3">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Map data and flags come from these CDNs -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://flagcdn.com">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json" as="fetch" crossorigin>
+
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/map.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/panel.css">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/modals.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div id="loader"><div class="box"><div class="spin"></div><div id="loader-msg">Loading the world…</div></div></div>
+
+<main id="map-wrap" aria-label="World map">
+  <div id="map-layer"><svg id="map" class="mode-gray" role="img"></svg></div>
+</main>
+<div id="tooltip" role="tooltip"></div>
+
+<header class="topbar">
+  <div class="brand glass"><span class="globe"><svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.9 6 3.9 9.5S14.6 18.7 12 21.5M12 2.5C9.4 5.3 8.1 8.5 8.1 12s1.3 6.7 3.9 9.5"/></svg></span><span class="bt">Atlas<sup>197</sup></span></div>
+  <nav class="seg glass nav" id="nav">
+    <button data-nav="explore" class="active"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="lbl-t" data-i18n="explore"></span></button>
+    <button data-nav="play"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></svg><span class="lbl-t" data-i18n="play"></span></button>
+    <button data-nav="progress"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl-t" data-i18n="progress"></span></button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="seg glass" id="display-seg">
+    <button data-display="flag"><svg class="ico" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span class="lbl-t" data-i18n="flags"></span></button>
+    <button data-display="gray"><svg class="ico" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M3.5 13.5l5-4 4 3 3-2 5 4"/></svg><span class="lbl-t" data-i18n="gray"></span></button>
+  </div>
+  <div class="seg glass">
+    <button id="names-btn" class="toggle-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M4 19 9 5l5 14M5.8 14h6.4M15 19v-6.5a2.5 2.5 0 0 1 5 0V19M15 15.5h5"/></svg><span class="lbl-t" data-i18n="names"></span></button>
+  </div>
+  <div class="seg glass lang" id="lang-seg">
+    <button data-lang="en">EN</button>
+    <button data-lang="fr">FR</button>
+  </div>
+</header>
+
+<div class="zoom-ctrl glass">
+  <button id="zoom-in" data-i18n-title="zoomIn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="zoom-out" data-i18n-title="zoomOut"><svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+  <button id="zoom-reset" data-i18n-title="resetView"><svg class="ico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+</div>
+<div class="legend glass">
+  <span><i class="k-c"></i><span data-i18n="legendCountry"></span></span>
+  <span><i class="k-t"></i><span data-i18n="legendTerr"></span></span>
+  <span><i class="k-m"></i><span data-i18n="legendSmall"></span></span>
+</div>
+
+<aside id="panel" aria-live="polite"></aside>
+<div id="hud" class="glass"></div>
+<section id="qcard" class="glass" aria-live="polite"></section>
+<section id="fm-tray" class="glass"></section>
+<section id="fm-list" class="glass"></section>
+
+<div class="modal" id="setup-modal" role="dialog" aria-modal="true"></div>
+<div class="modal" id="end-modal" role="dialog" aria-modal="true"></div>
+<div class="modal" id="progress-modal" role="dialog" aria-modal="true"></div>
+<div class="modal" id="confirm-modal" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

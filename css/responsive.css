@@ -1,0 +1,45 @@
+/* =====================================================================
+   RESPONSIVE
+   Tablet / phone layouts and reduced motion.
+   ===================================================================== */
+@media (max-width:980px){
+  .brand .bt{display:none}
+  .brand{padding:7px}
+  .seg button{padding:8px 11px}
+  .modes{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:720px){
+  :root{--top:112px}
+  .topbar{flex-wrap:wrap;gap:6px;top:8px;left:8px;right:8px}
+  .topbar .spacer{display:none}
+  .nav{order:3;flex:1;justify-content:space-between}
+  .nav button{flex:1;justify-content:center}
+  .seg button{font-size:13px;padding:8px 9px}
+  .seg button .lbl-t{display:none}
+  .nav button .lbl-t{display:inline}
+  .legend{display:none}
+  #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:72%;max-width:none;transform:translateY(calc(100% + 30px))}
+  #panel.open{transform:none}
+  #hud{gap:9px;padding:7px 8px 7px 12px;font-size:13px}
+  .hud-stat span{display:none}
+  .hud-prog{width:60px}
+  .q-prompt{font-size:19px}
+  .q-opts{gap:6px}
+  .q-opt{padding:10px 9px;font-size:14px;gap:7px}
+  .q-opt kbd{display:none}
+  .fm-help{display:none}
+  .q-sub{display:none}
+  #qcard{bottom:8px;padding:14px}
+  .dialog{padding:20px;border-radius:20px}
+  .dialog h2{font-size:25px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .missed{grid-template-columns:1fr}
+  .cbar{grid-template-columns:100px 1fr 56px;font-size:13px}
+  #fm-list{top:auto;bottom:178px;right:8px;left:8px;width:auto;max-height:30%}
+  #fm-tray{bottom:8px}
+  .fm-chip,.fm-ghost{width:64px;height:43px}
+  .fm-target{padding:9px 12px;margin-bottom:6px;font-size:14px}
+  .zoom-ctrl{bottom:auto;top:calc(var(--top) + 8px);right:8px}
+  body.in-game .zoom-ctrl{top:calc(var(--top) + 56px)}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}

@@ -1,0 +1,18 @@
+{
+  "name": "atlas-197",
+  "version": "1.0.0",
+  "description": "Interactive world geography trainer: 197 countries, flags, capitals and locations (EN/FR).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 3000 .",
+    "test": "node --test tests/*.test.mjs",
+    "test:data": "node --test tests/data.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

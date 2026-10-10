@@ -1,0 +1,7 @@
+# Only the site itself is deployed
+tests/
+node_modules/
+package.json
+package-lock.json
+README.md
+.editorconfig

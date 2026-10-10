@@ -1,0 +1,40 @@
+/* =====================================================================
+   LAYOUT
+   Top bar, zoom buttons, legend, loader and toast.
+   ===================================================================== */
+.topbar{position:fixed;top:12px;left:12px;right:12px;z-index:30;display:flex;align-items:center;gap:10px;pointer-events:none}
+.topbar > *{pointer-events:auto}
+/* No backdrop blur on purpose: it would be recomputed on every frame while the map moves underneath. */
+.glass{background:var(--glass);border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:9px;padding:7px 15px 7px 9px;border-radius:999px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;white-space:nowrap}
+.brand .globe{width:30px;height:30px;border-radius:50%;background:var(--ink);display:grid;place-items:center;color:#fff}
+.brand .globe svg{width:18px;height:18px}
+.brand sup{font-family:var(--font);font-size:11px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);padding:2px 6px;border-radius:99px;margin-left:2px;vertical-align:4px}
+.seg{display:flex;padding:4px;border-radius:999px;gap:2px}
+.seg button{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:14px;font-weight:700;color:var(--ink-2);transition:background .2s,color .2s;white-space:nowrap}
+.seg button:hover:not(:disabled){background:rgba(19,35,58,.06)}
+.seg button.active,.seg button.active:hover:not(:disabled){background:var(--ink);color:#fff}
+.spacer{flex:1}
+.lang button{min-width:42px;justify-content:center;padding:8px 10px}
+.toggle-btn.off{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1.5px}
+
+.zoom-ctrl{position:fixed;right:16px;bottom:18px;z-index:20;display:flex;flex-direction:column;border-radius:14px;overflow:hidden}
+.zoom-ctrl button{width:42px;height:42px;display:grid;place-items:center;color:var(--ink-2)}
+.zoom-ctrl button:hover{background:rgba(19,35,58,.06)}
+.zoom-ctrl button + button{border-top:1px solid var(--line)}
+.legend{position:fixed;left:16px;bottom:18px;z-index:20;display:flex;gap:14px;align-items:center;padding:9px 14px;border-radius:14px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend .k-c{background:var(--land)}
+.legend .k-t{background:var(--terr)}
+.legend .k-m{width:11px;height:11px;border-radius:50%;background:#fff;border:1.6px solid var(--land-dark)}
+body.in-game .legend{display:none}
+
+#loader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--ocean);transition:opacity .5s}
+#loader.hide{opacity:0;pointer-events:none}
+#loader .box{text-align:center;font-weight:700;color:var(--ink-2)}
+#loader .spin{width:44px;height:44px;margin:0 auto 14px;border-radius:50%;border:4px solid rgba(19,35,58,.12);border-top-color:var(--ink);animation:spin 1s linear infinite}
+#loader.error .spin{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#toast{position:fixed;z-index:120;left:50%;top:calc(var(--top) + 64px);transform:translate(-50%,-20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:var(--shadow);transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}

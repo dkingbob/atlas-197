@@ -1,0 +1,102 @@
+/**
+ * "My progress" dialog: % of countries known per continent, accuracy per
+ * subject, the hard list, and a reset button.
+ */
+import { CONTINENT_IDS } from '../config.js';
+import { COUNTRIES, COUNTRY_BY_ID } from '../data/countries/index.js';
+import { Store } from '../core/store.js';
+import { $, escapeHtml } from '../core/utils.js';
+import { t, lang, countryName, continentName } from '../i18n/i18n.js';
+import { ICONS } from './icons.js';
+import { flagImage, Modal, Toast } from './components.js';
+
+const ID = 'progress-modal';
+let onPlayHardList = () => {};
+let onReset = () => {};
+
+function progressBar(label, done, total) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `<div class="cbar"><span>${escapeHtml(label)}</span>
+    <div class="track"><i style="width:${pct}%"></i></div><em>${done}/${total} · ${pct}%</em></div>`;
+}
+
+function knownSection() {
+  const known = new Set(Store.knownIds());
+  const rows = CONTINENT_IDS.map(id => {
+    const list = COUNTRIES.filter(c => c.continent === id);
+    return progressBar(continentName(id), list.filter(c => known.has(c.id)).length, list.length);
+  }).join('');
+  const all = progressBar(t('overall'), COUNTRIES.filter(c => known.has(c.id)).length, COUNTRIES.length);
+  return `<div class="cont-bars">${rows}<div style="height:4px"></div>${all}</div>`;
+}
+
+function accuracySection() {
+  const totals = { name: [0, 0], capital: [0, 0], location: [0, 0] }; // [correct, seen]
+  for (const perCountry of Object.values(Store.allStats())) {
+    for (const subject of Object.keys(totals)) {
+      if (perCountry[subject]) { totals[subject][0] += perCountry[subject].ok; totals[subject][1] += perCountry[subject].seen; }
+    }
+  }
+  return `<div class="cont-bars">${Object.entries(totals).map(([subject, [ok, seen]]) => {
+    const pct = seen ? Math.round(ok / seen * 100) : 0;
+    return `<div class="cbar"><span>${t('s_' + subject)}</span>
+        <div class="track"><i class="acc" style="width:${pct}%"></i></div><em>${seen ? pct + '%' : '—'}</em></div>
+      <p class="note tight">${seen ? t('answered', { n: seen }) : t('noAnswers')}</p>`;
+  }).join('')}</div>`;
+}
+
+function hardListSection(hard) {
+  if (!hard.length) return `<p class="empty">${t('hardListEmpty')}</p>`;
+  return `<div class="hard-list">${hard.map(c => {
+    const weight = Store.hardWeight(c.id);
+    return `<span class="hard-item">${flagImage(c.id, '', countryName(c))}${escapeHtml(countryName(c))}
+      <span class="w" title="${weight}/9">${'<i></i>'.repeat(Math.ceil(weight / 3))}</span>
+      <button data-remove="${c.id}" title="${t('remove')}" aria-label="${t('remove')}">${ICONS.close}</button></span>`;
+  }).join('')}</div>`;
+}
+
+function render() {
+  const hard = Store.hardIds().map(id => COUNTRY_BY_ID.get(id)).filter(Boolean)
+    .sort((a, b) => countryName(a).localeCompare(countryName(b), lang()));
+  $('#' + ID).innerHTML = `
+    <div class="dialog">
+      <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
+      <h2>${t('progTitle')}</h2><p class="lead">${t('progLead')}</p>
+      <div class="d-sec"><h3>${t('knownByCont')}</h3>${knownSection()}</div>
+      <div class="d-sec"><h3>${t('bySubject')}</h3>${accuracySection()}</div>
+      <div class="d-sec"><h3>${t('hardList')} (${hard.length})</h3>${hardListSection(hard)}</div>
+      <div class="d-foot"><span class="pool"></span>
+        ${hard.length ? `<button class="btn btn-accent" data-act="playhard">${ICONS.repeat}${t('playHard')}</button>` : ''}
+        <button class="btn btn-soft" data-act="reset">${ICONS.trash}${t('reset')}</button>
+      </div>
+    </div>`;
+}
+
+function onClick(e) {
+  const modal = $('#' + ID);
+  if (e.target === modal) return Modal.close(ID);
+  const remove = e.target.closest('[data-remove]');
+  if (remove) { Store.setHard(remove.dataset.remove, false); render(); onReset(); return; }
+  const action = e.target.closest('[data-act]')?.dataset.act;
+  if (action === 'close') Modal.close(ID);
+  if (action === 'playhard') { Modal.close(ID); onPlayHardList(); }
+  if (action === 'reset') {
+    Modal.confirm({ title: t('resetTitle'), text: t('resetConfirm'), okLabel: t('confirm') }, () => {
+      Store.reset();
+      render();
+      onReset();
+      Toast.show(t('resetDone'));
+    });
+  }
+}
+
+export const ProgressPanel = {
+  /** @param {{ onPlayHardList: Function, onChange: Function }} callbacks */
+  init(callbacks) {
+    onPlayHardList = callbacks.onPlayHardList;
+    onReset = callbacks.onChange;
+    $('#' + ID).addEventListener('click', onClick);
+  },
+  open() { render(); Modal.open(ID); },
+  refresh() { if (Modal.isOpen(ID)) render(); },
+};
