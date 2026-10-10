@@ -25,6 +25,7 @@ import { Game } from './game/game.js';
 import { Rush } from './game/rush.js';
 import { Study } from './game/study.js';
 import { Recap } from './game/recap.js';
+import { FinalTest } from './game/final-test.js';
 import { FlagQuiz } from './game/flag-quiz.js';
 import { Facts } from './game/facts.js';
 import { CapitalPin } from './game/capital-pin.js';
@@ -76,7 +77,7 @@ function syncHeaderButtons() {
 
 /** Flags would give the answer away in Rush and in most classic modes. */
 /** Engines with their own screens (start(settings) / stop() / isRunning() / onPlaceClick(rec)). */
-const ENGINES = { flags: FlagQuiz, facts: Facts, pin: CapitalPin };
+const ENGINES = { flags: FlagQuiz, facts: Facts, pin: CapitalPin, final: FinalTest };
 const runningEngine = () => Object.values(ENGINES).find(e => e.isRunning());
 const flagsAllowed = () => !Rush.isRunning() && !Study.isRunning() && !runningEngine() && Game.flagsAllowed();
 const anyGameActive = () => Game.isActive() || Rush.isRunning() || Study.isRunning() || Boolean(runningEngine());
@@ -266,7 +267,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Recap, FlagQuiz, Facts, CapitalPin, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 

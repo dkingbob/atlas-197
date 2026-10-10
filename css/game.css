@@ -269,3 +269,23 @@ body.in-pin #map-wrap{cursor:crosshair}
   .rc-skip{width:100%}
   .modes.three{grid-template-columns:1fr}
 }
+
+/* Final test (end of a Study session) */
+body.in-final #hud{display:none}
+#ft-hud{position:fixed;z-index:30;top:calc(var(--top) + 8px);left:50%;transform:translateX(-50%);display:none;align-items:center;gap:14px;padding:9px 10px 9px 16px;border-radius:999px;font-weight:800;font-size:14px;white-space:nowrap}
+#ft-hud.show{display:flex}
+#ft-card{position:fixed;z-index:30;left:50%;bottom:18px;transform:translate(-50%,calc(100% + 40px));visibility:hidden;width:min(600px,calc(100% - 24px));border-radius:22px;padding:16px 18px 14px;transition:transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s .35s}
+#ft-card.show{transform:translate(-50%,0);visibility:visible;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.ft-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.ft-top .s-tag{margin:0;background:#ede9fe;color:#6d28d9}
+.ft-step{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.ft-flag{display:flex;align-items:center;gap:14px;margin:10px 0;padding:8px;border-radius:14px}
+.ft-flag img{width:130px;height:86px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.25))}
+.ft-flag.ok{background:var(--ok-soft)}
+.ft-flag.bad{background:var(--bad-soft)}
+.ft-flag b{display:block;font-family:var(--display);font-size:24px}
+.ft-flag small{color:var(--muted);font-weight:700}
+.ft-result{margin:4px 0 0;font-weight:800;font-size:15px}
+.ft-result.ok{color:var(--ok)}
+.ft-result.bad{color:var(--bad)}
+@media (max-width:720px){ .ft-flag img{width:96px;height:64px} #ft-card{bottom:8px;padding:12px 14px} }

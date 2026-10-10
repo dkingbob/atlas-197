@@ -33,6 +33,7 @@ import { ICONS } from '../ui/icons.js';
 import { flagImage, Modal, Toast } from '../ui/components.js';
 import { SessionQueue, planSession, nextCard, lapsedCard, deckSummary, isDue, DAY_MS } from './srs.js';
 import { Recap } from './recap.js';
+import { FinalTest } from './final-test.js';
 
 export const STUDY_NEW_COUNTS = [3, 5, 10, 15, 20];
 export const DEFAULT_STUDY_SETTINGS = { conts: CONTINENT_IDS.slice(), levels: [1, 2], newCount: 5, capitals: false, recap: 'none' };
@@ -441,6 +442,7 @@ function finish() {
       <p class="note">${t('studyComeBack')}</p>
       <div class="d-foot"><span class="pool"></span>
         <button class="btn btn-soft" data-act="back">${t('backMap')}</button>
+        <button class="btn btn-accent" data-act="final" ${run.queue.finished.length ? '' : 'disabled'}>${ICONS.repeat}${t('ftButton')}</button>
         <button class="btn btn-primary" data-act="more" ${summary.fresh || summary.due ? '' : 'disabled'}>${ICONS.repeat}${t('studyMore')}</button>
       </div>
     </div>`;
@@ -462,9 +464,11 @@ function onEndClick(e) {
   const action = e.target.closest('[data-act]')?.dataset.act;
   if (!action) return;
   const settings = run?.settings;
+  const sessionIds = run?.queue.finished.map(f => f.id) || [];
   Modal.close(END_ID);
   stop();
   if (action === 'more' && settings) start(settings);
+  if (action === 'final' && sessionIds.length) FinalTest.start({ ids: sessionIds, capitals: settings.capitals });
 }
 
 /* =====================================================================

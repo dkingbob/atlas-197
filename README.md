@@ -9,7 +9,7 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 - **Capitals** display button (top right, next to *Names*): shows a dot and the name of every capital city on the map.
 - **Capitals** button (in the menu): games only about capitals, including **Capital pin** (click where the city is — points by distance).
 - **Endless (∞) or custom** number of questions in every quiz.
-- **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition). Before the new countries you can choose a **recap**: a quiz on everything seen, or an automatic slideshow (map + flag + name, read aloud if you want) with a 0.75× – 2× speed slider.
+- **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition). Before the new countries you can choose a **recap**: a quiz on everything seen, or an automatic slideshow (map + flag + name, read aloud if you want) with a 0.75× – 2× speed slider. At the end, a **Final test** redoes the whole session in one go, from memory, with no second try: a mistake shows the answer (the place you clicked in red, the right country with its flag) and moves on.
 - **Rush**: timed rounds — name as many countries as you can before the clock runs out. 5 types: *flag on the map*, *flag only*, *capitals*, *map hunt*, *survival*.
 - **Party**: play Rush with up to 4 friends. The host picks the settings, everyone gets the same countries, live scoreboard, final ranking. Share a 5-letter room code or an invite link.
 - **5 difficulty levels** (easy → very hard). Harder countries are worth more points (10 / 15 / 20 / 30 / 50) and every mode can be filtered by level.
@@ -104,6 +104,7 @@ js/
     srs.js              Spaced repetition: Leitner boxes + in-session queue (pure logic)
     rush.js             Timed Rush rounds (solo and party)
     recap.js            Study recap slideshow
+    final-test.js       Final test at the end of a Study session
     flag-quiz.js        Flags mode (practice / game)
     facts.js            Facts mode (clues → country or capital)
     facts-pool.js       All clues for a country, with its names hidden
@@ -128,6 +129,7 @@ tests/
   facts-game.test.mjs   Facts game in the browser
   capitals.test.mjs     Capitals button and capital pin
   recap.test.mjs        Study recap: quiz first, slideshow and speed slider
+  final-test.test.mjs   Final test after a Study session
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
 ```

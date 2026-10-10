@@ -125,12 +125,14 @@ function regionView() {
   else MapView.resetView(500);
 }
 
-function guess(lonLat) {
+/** `clicked` = the country under the click, when the click was on land. */
+function guess(lonLat, clicked = null) {
   if (!run || run.answer || !lonLat) return;
   const c = run.current;
   const city = STATS[c.id].capitalLonLat;
   const km = kmBetween(lonLat, city);
-  const inside = MapView.contains(MapView.record(c.id), lonLat);
+  // right country: clicked on its shape, or inside it, or (coastal capitals on a simplified map) right on the city
+  const inside = clicked ? clicked.id === c.id : MapView.contains(MapView.record(c.id), lonLat) || km <= PERFECT_KM;
   const points = pinPoints(km, inside);
   run.score += points;
   run.answer = { km, inside, points };
@@ -241,7 +243,7 @@ export const CapitalPin = {
   stop,
   isRunning: () => Boolean(run),
   /** Clicks on land and on water both drop a pin. */
-  onPlaceClick(rec, e) { if (e) guess(MapView.lonLatOf(e)); },
+  onPlaceClick(rec, e) { if (e) guess(MapView.lonLatOf(e), rec); },
   onWaterClick(lonLat) { guess(lonLat); },
   /** Tests: drop a pin at [lon, lat]. */
   pinAt: guess,
