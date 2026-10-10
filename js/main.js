@@ -24,9 +24,14 @@ import { Modal, Toast } from './ui/components.js';
 import { Game } from './game/game.js';
 import { Rush } from './game/rush.js';
 import { Study } from './game/study.js';
+import { Recap } from './game/recap.js';
+import { FlagQuiz } from './game/flag-quiz.js';
+import { Facts } from './game/facts.js';
+import { CapitalPin } from './game/capital-pin.js';
 import { PartyDialog } from './ui/party-dialog.js';
 
 let inGame = false;
+let playNav = 'play'; // which nav button started the game: 'play' or 'capitals'
 
 /* ---------- static texts (elements with data-i18n / data-i18n-title) ---------- */
 function applyStaticTexts() {
@@ -52,6 +57,7 @@ function setLanguage(newLang) {
   Game.refresh();
   Rush.refresh();
   Study.refresh();
+  Object.values(ENGINES).forEach(engine => engine.refresh());
 }
 
 /* ---------- display mode (flags / gray) & names ---------- */
@@ -64,8 +70,11 @@ function syncHeaderButtons() {
 }
 
 /** Flags would give the answer away in Rush and in most classic modes. */
-const flagsAllowed = () => !Rush.isRunning() && !Study.isRunning() && Game.flagsAllowed();
-const anyGameActive = () => Game.isActive() || Rush.isRunning() || Study.isRunning();
+/** Engines with their own screens (start(settings) / stop() / isRunning() / onPlaceClick(rec)). */
+const ENGINES = { flags: FlagQuiz, facts: Facts, pin: CapitalPin };
+const runningEngine = () => Object.values(ENGINES).find(e => e.isRunning());
+const flagsAllowed = () => !Rush.isRunning() && !Study.isRunning() && !runningEngine() && Game.flagsAllowed();
+const anyGameActive = () => Game.isActive() || Rush.isRunning() || Study.isRunning() || Boolean(runningEngine());
 
 function setDisplay(mode) {
   if (inGame && !flagsAllowed()) return Toast.show(t('flagOff'));
@@ -85,7 +94,7 @@ function toggleNames() {
 function setGameMode(on) {
   inGame = on;
   document.body.classList.toggle('in-game', on);
-  const playing = on ? (PartyDialog.isInParty() ? 'party' : 'play') : 'explore';
+  const playing = on ? (PartyDialog.isInParty() ? 'party' : playNav) : 'explore';
   $$('#nav [data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === playing));
   if (on) CountryPanel.close();
   syncHeaderButtons();
@@ -105,20 +114,23 @@ function bindHeader() {
       if (Game.isActive()) Game.quit();
       if (Rush.isRunning() && !PartyDialog.isInParty()) { Modal.close('rush-end-modal'); Rush.stop(); }
       if (Study.isRunning()) { Modal.close('study-end-modal'); Study.stop(); }
+      const engine = runningEngine();
+      if (engine) { document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open')); engine.stop(); }
       Modal.close('setup-modal');
       Modal.close('party-modal');
       Modal.close('progress-modal');
       setGameMode(false);
     }
-    if (target === 'play') {
+    if (target === 'play' || target === 'capitals') {
       if (anyGameActive() || PartyDialog.isInParty()) return Toast.show(t('gameRunning'));
       Modal.close('progress-modal');
       Modal.close('party-modal');
       CountryPanel.close();
-      SetupDialog.open();
+      playNav = target;
+      SetupDialog.open(target === 'capitals' ? { hub: 'capitals' } : {});
     }
     if (target === 'party') {
-      if (Game.isActive() || Study.isRunning()) return Toast.show(t('gameRunning'));
+      if (Game.isActive() || Study.isRunning() || runningEngine()) return Toast.show(t('gameRunning'));
       Modal.close('setup-modal');
       Modal.close('progress-modal');
       CountryPanel.close();
@@ -155,14 +167,18 @@ function bindGlobalKeys() {
 }
 
 function bindMap() {
-  MapView.onPlaceClick(rec => {
+  MapView.onPlaceClick((rec, e) => {
     if (Game.isActive()) return Game.onPlaceClick(rec);
     if (Rush.isRunning()) return Rush.onPlaceClick(rec);
     if (Study.isRunning()) return Study.onPlaceClick(rec);
+    if (runningEngine()) return runningEngine().onPlaceClick(rec, e);
     if (Modal.isOpen('end-modal')) return;
     explorePlace(rec);
   });
-  MapView.onWaterClick(lonLat => { if (Game.isActive()) Game.onWaterClick(lonLat); });
+  MapView.onWaterClick(lonLat => {
+    if (Game.isActive()) Game.onWaterClick(lonLat);
+    else runningEngine()?.onWaterClick?.(lonLat);
+  });
 }
 
 function showLoadError() {
@@ -170,9 +186,29 @@ function showLoadError() {
   $('#loader-msg').textContent = t('loadError');
 }
 
+/**
+ * Progress lives in this browser, for this exact address. Vercel also serves
+ * every deployment on its own address (atlas-197-abc123.vercel.app): warn
+ * there, otherwise the player thinks their progress is gone.
+ */
+function warnIfOtherAddress() {
+  const home = new URL(CONFIG.HOME_URL);
+  const { hostname } = location;
+  if (hostname === home.hostname || !hostname.endsWith('.vercel.app')) return;
+  const banner = document.createElement('div');
+  banner.id = 'address-banner';
+  banner.className = 'glass';
+  banner.innerHTML = `<span>${t('otherAddress')}</span><a class="btn btn-primary sm" href="${CONFIG.HOME_URL}">${home.hostname}</a>
+    <button class="btn btn-soft sm" aria-label="${t('close')}">✕</button>`;
+  banner.querySelector('button').addEventListener('click', () => banner.remove());
+  document.body.appendChild(banner);
+}
+
 /* ---------- boot ---------- */
 async function boot() {
   applyStaticTexts();
+  Store.askPersistent();
+  warnIfOtherAddress();
   if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return showLoadError();
 
   CountryPanel.init();
@@ -180,6 +216,7 @@ async function boot() {
     onStart: config => {
       if (config.mode === 'rush') Rush.start({ settings: config.rush });
       else if (config.mode === 'study') Study.start(config.study);
+      else if (ENGINES[config.mode]) ENGINES[config.mode].start(config.settings);
       else Game.start(config);
     },
   });
@@ -191,6 +228,7 @@ async function boot() {
   Game.init({ onModeChange: setGameMode });
   Rush.init({ onModeChange: setGameMode });
   Study.init({ onModeChange: setGameMode });
+  Object.values(ENGINES).forEach(engine => engine.init({ onModeChange: setGameMode }));
   bindHeader();
   bindGlobalKeys();
   bindMap();
@@ -212,7 +250,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Recap, FlagQuiz, Facts, CapitalPin, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 

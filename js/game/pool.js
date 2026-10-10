@@ -30,6 +30,23 @@ export function buildCountryPool(config) {
   });
 }
 
+/** Key of an item in the game memory (Store.asked). */
+export const memoryKey = item => (item.type && !item.continent ? 'w:' + item.id : item.id);
+
+const RECENT_JITTER_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Random order that puts what you have not seen for a while first:
+ * never-asked items (in random order), then the ones asked longest ago.
+ * A bit of randomness (6 h) mixes items asked around the same time.
+ */
+export function freshOrder(items, keyOf = memoryKey) {
+  return items
+    .map(item => ({ item, score: Store.lastAsked(keyOf(item)) + Math.random() * RECENT_JITTER_MS }))
+    .sort((a, b) => a.score - b.score)
+    .map(x => x.item);
+}
+
 /**
  * Hard-list mode: pick the next country, favouring high weights
  * (missed recently) and never repeating the previous question.

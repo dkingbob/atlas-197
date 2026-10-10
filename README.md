@@ -4,12 +4,17 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 
 - **Explore** the map: hover a country to see its name, click it for its flag, capital, a short history and 3 key facts.
 - **Play** 6 game modes × 3 subjects (country name, capital, location) × 3 answer types (click the map, type, multiple choice).
-- **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition).
+- **Flags**: a flag pops up — write (or say, with the microphone) the country. *Practice* is endless with "show answer" and a letters hint; *Game* has 3 lives and 1 hint.
+- **Facts**: read clues and guess the country (or its capital). *Normal* starts with the 3 key facts; *Hard* starts with 3 historical facts out of 20+ per country. Ask for more clues — each one costs points.
+- **Capitals** button: games only about capitals, including **Capital pin** (click where the city is — points by distance).
+- **Endless (∞) or custom** number of questions in every quiz.
+- **Study**: learn new countries for good. See the flag on the map → write the name → later, recall it from memory on a gray map (name, location, capital) → mistakes must be corrected and come back until you know them. Learned countries return for review after 1, 2, 4, 8… days (spaced repetition). Before the new countries you can choose a **recap**: a quiz on everything seen, or an automatic slideshow (map + flag + name, read aloud if you want) with a 0.75× – 2× speed slider.
 - **Rush**: timed rounds — name as many countries as you can before the clock runs out. 5 types: *flag on the map*, *flag only*, *capitals*, *map hunt*, *survival*.
 - **Party**: play Rush with up to 4 friends. The host picks the settings, everyone gets the same countries, live scoreboard, final ranking. Share a 5-letter room code or an invite link.
 - **5 difficulty levels** (easy → very hard). Harder countries are worth more points (10 / 15 / 20 / 30 / 50) and every mode can be filtered by level.
 - **Forgiving typing**: English or French, accents optional, typos and spellings that *sound* right are accepted ("Filipines", "Djibuti", "Kazakstan") — but never a different country ("Niger" ≠ Nigeria).
 - **Track progress**: mark countries as known, keep a "hard list" that comes back more often, see your accuracy per subject.
+- **Game memory**: games start with what you haven't been asked for a while, so they don't repeat. Clear it, or back up / restore all progress as a file, from *Progress*.
 
 No framework, no build step: plain HTML, CSS and JavaScript modules.
 
@@ -56,6 +61,8 @@ js/
   config.js             Constants: data URLs, lives/hints/skips, party, continents
   data/
     countries/*.js      One file per continent — the country data (EN + FR)
+    facts/history-*.js  6 historical facts per country (EN + FR), for the Facts game
+    facts/stats.js      GENERATED numbers & names (area, population, highest point…) — see tools/
     difficulty.js       Level 1–5 of every country and the points per level
     territories.js      Non-quizzable territories, overseas parts, merged shapes
     waters.js           Oceans & seas: names, label positions, rough outlines
@@ -66,19 +73,23 @@ js/
     store.js            Saved progress (localStorage) — swap point for a backend
     answers.js          Checks typed answers (aliases, accents, typos, sound-alikes)
     phonetic.js         Sound-alike key for EN/FR spellings
+    speech.js           Speak / listen (Web Speech API)
     utils.js            Small helpers
   map/
     map-view.js         The map: drawing, zoom, labels, hover, public API
     map-data.js         Turns the TopoJSON into one record per country/territory
     flags.js            Flag fills (SVG patterns sized to each shape)
-    highlight-layer.js  Hover lift + pulsing target, on a separate layer
+    highlight-layer.js  Hover lift, pulsing target and pins, on a separate layer
     water-shapes.js     Ocean/sea outlines → GeoJSON
     polylabel.js        Best label position inside a shape
   ui/
     country-panel.js    Explore panel
     setup-dialog.js     "Start a game" dialog and filters
     rush-settings.js    Rush settings form (shared by solo setup and party lobby)
-    study-settings.js   Study settings form (deck, new per session, capitals)
+    study-settings.js   Study settings form (deck, new per session, capitals, recap)
+    form.js             Small declarative settings forms
+    mode-forms.js       Settings of Flags, Facts and Capital pin (uses form.js)
+    speed-slider.js     The stepped, smooth speed slider (recap slideshow)
     party-dialog.js     Party: create/join a room, lobby, countdown, results
     progress-panel.js   "My progress" dialog
     components.js       Flag image, toast, modal helpers
@@ -91,9 +102,17 @@ js/
     study.js            Study mode: see → write → recall → fix (active recall)
     srs.js              Spaced repetition: Leitner boxes + in-session queue (pure logic)
     rush.js             Timed Rush rounds (solo and party)
+    recap.js            Study recap slideshow
+    flag-quiz.js        Flags mode (practice / game)
+    facts.js            Facts mode (clues → country or capital)
+    facts-pool.js       All clues for a country, with its names hidden
+    capital-pin.js      Capital pin mode (distance scoring)
   net/
     peer-transport.js   PeerJS (WebRTC) loading and connections
     lobby.js            Party room: players, settings, start, scores, results
+tools/
+  build-stats.mjs       Rebuilds js/data/facts/stats.js from the CIA World Factbook + mledoze/countries
+  factbook-map.json     Which Factbook file is which country
 tests/
   data.test.mjs         Data integrity (runs in Node)
   e2e.test.mjs          Plays every mode in a headless browser
@@ -102,6 +121,11 @@ tests/
   srs.test.mjs          Spaced-repetition scheduling (runs in Node)
   study.test.mjs        Study mode: see, write, recall, fix, reviews
   party.test.mjs        4 browsers in one room (+ a refused 5th)
+  flags.test.mjs        Flags mode, endless & custom counts, game memory, backup
+  facts.test.mjs        20+ clues per country, names never shown (runs in Node)
+  facts-game.test.mjs   Facts game in the browser
+  capitals.test.mjs     Capitals button and capital pin
+  recap.test.mjs        Study recap: quiz first, slideshow and speed slider
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
 ```
@@ -112,7 +136,9 @@ tests/
 main.js ──► MapView (map)         click on a place ──► CountryPanel (explore)
    │                                               └─► Game (when a game is running)
    ├──► SetupDialog ──onStart(config)──► Game ──► QuestionRound | FlagMatch
-   │                                 └──► Rush (timed modes)
+   │      (Play / Capitals)          ├──► Rush (timed modes)
+   │                                 ├──► Study ──► Recap (slideshow)
+   │                                 └──► FlagQuiz | Facts | CapitalPin (own screens)
    ├──► PartyDialog ──► Lobby (net/) ◄──WebRTC──► other players
    │         └──────► Rush (same countries for everyone)
    ├──► ProgressPanel
@@ -173,9 +199,19 @@ Measured in headless Chromium while dragging the map: ~23 fps before → steady 
 
 **Gameplay numbers** (lives, hints, skips, marker size threshold) — `js/config.js`.
 
+**Facts game clues** — historical facts are in `js/data/facts/history-<region>.js` (6 per country, EN + FR; the country's name is hidden automatically). Numbers come from `stats.js`, which is generated:
+
+```bash
+git clone --depth 1 https://github.com/factbook/factbook.json /tmp/factbook
+git clone --depth 1 https://github.com/mledoze/countries /tmp/countries
+node tools/build-stats.mjs /tmp/factbook /tmp/countries
+```
+
 ## Saved progress and a future backend
 
-Everything the app saves goes through `js/core/store.js` (language, display preferences, known countries, hard list with weights, per-country statistics). It currently uses `localStorage`. To add user accounts later, implement an adapter with `load()` and `save(state)` and call `Store.setAdapter(...)` — no other file needs to change. The comment at the top of `store.js` shows an example.
+Everything the app saves goes through `js/core/store.js` (language, display preferences, known countries, hard list with weights, per-country statistics, study cards, game memory).
+
+Progress is saved **per web address**: `atlas-197.vercel.app` and a Vercel preview address such as `atlas-197-abc123.vercel.app` do not share it (the app shows a warning on other addresses). *Progress › Back up* downloads everything as a file; *Restore* loads it back on any device. It currently uses `localStorage`. To add user accounts later, implement an adapter with `load()` and `save(state)` and call `Store.setAdapter(...)` — no other file needs to change. The comment at the top of `store.js` shows an example.
 
 ## Tests
 
@@ -197,6 +233,7 @@ The end-to-end tests load d3, the map and flags from their CDNs. Without interne
 - Map shapes: [Natural Earth](https://www.naturalearthdata.com/) 1:50m (public domain) via the [world-atlas](https://github.com/topojson/world-atlas) package, loaded from jsDelivr.
 - Flags: [flagcdn.com](https://flagcdn.com).
 - Map rendering: [d3](https://d3js.org) v7 and [topojson-client](https://github.com/topojson/topojson-client).
-- Country texts were written for this project. Population figures are rounded estimates (~2024).
+- Country texts and historical facts were written for this project. Population figures in the panels are rounded estimates (~2024).
+- Facts-game numbers (area, population, highest point, independence, anthem, capital coordinates…): [CIA World Factbook](https://www.cia.gov/the-world-factbook/) (public domain, via [factbook.json](https://github.com/factbook/factbook.json)) and [mledoze/countries](https://github.com/mledoze/countries) (ODbL) for currencies, languages, phone codes and web domains.
 
 Continent grouping used by the quizzes: Russia and Cyprus → Europe; Turkey, Georgia, Armenia, Azerbaijan → Asia; Central America and the Caribbean → North America.

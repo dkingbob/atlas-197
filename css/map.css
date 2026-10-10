@@ -67,3 +67,9 @@
   white-space:nowrap;transform:translate(-50%,calc(-100% - 14px));opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 #tooltip.show{opacity:1}
 #tooltip small{display:block;font-weight:500;opacity:.75;font-size:11.5px}
+/* Capital pin game: your guess, the answer, and the line between them */
+.fx-pin{stroke:#fff}
+.fx-pin.guess{fill:var(--accent)}
+.fx-pin.answer{fill:var(--ok)}
+.fx-pin.city{fill:var(--ink)}
+.fx-pinline{stroke:var(--ink);fill:none;opacity:.7}

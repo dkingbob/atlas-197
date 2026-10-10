@@ -16,6 +16,8 @@
  *   hard     { [countryId]: weight 1..9 }     "I can't remember" list (higher = asked more)
  *   stats    { [countryId]: { name|capital|location: { seen, ok, ko } } }
  *   srs      { [countryId]: { box 1..7, due: timestamp, lapses, last } }   Study mode (see game/srs.js)
+ *   asked    { [itemKey]: { t: last asked timestamp, n: times asked } }    game memory: games
+ *            prefer what you have not seen for a while, so they do not repeat
  */
 import { CONFIG } from '../config.js';
 import { clamp } from './utils.js';
@@ -30,6 +32,7 @@ const localStorageAdapter = {
 };
 
 const HARD_START_WEIGHT = 3;
+const BACKUP_FORMAT = 'atlas197-backup';
 
 function defaultState() {
   return {
@@ -40,6 +43,7 @@ function defaultState() {
     hard: {},
     stats: {},
     srs: {},
+    asked: {},
   };
 }
 
@@ -106,9 +110,35 @@ export const Store = {
   },
   allStats: () => state.stats,
 
+  /* Game memory (what was asked, when) */
+  markAsked(key) {
+    const entry = state.asked[key] || (state.asked[key] = { t: 0, n: 0 });
+    entry.t = Date.now();
+    entry.n++;
+    save();
+  },
+  lastAsked: key => state.asked[key]?.t || 0,
+  askedCount: () => Object.keys(state.asked).length,
+  clearAsked() { state.asked = {}; save(); },
+
   /* Study mode: spaced-repetition cards */
   srsCards: () => state.srs,
   setSrsCard(id, card) { state.srs[id] = card; save(); },
+
+  clearStudy() { state.srs = {}; save(); },
+
+  /** Everything saved, as a file the player can keep (Progress › Back up). */
+  exportBackup() { return JSON.stringify({ format: BACKUP_FORMAT, savedAt: new Date().toISOString(), state }); },
+  /** Restore a backup made with exportBackup(). Throws on a file that is not a backup. */
+  importBackup(text) {
+    const data = JSON.parse(text);
+    if (data?.format !== BACKUP_FORMAT || typeof data.state !== 'object') throw new Error('not-a-backup');
+    state = withDefaults(data.state);
+    save();
+  },
+
+  /** Ask the browser not to clear our data when space runs low. */
+  askPersistent() { navigator.storage?.persist?.().catch(() => {}); },
 
   /** Erase progress but keep language and display preferences. */
   reset() {

@@ -21,12 +21,12 @@ export function rushSummary(s) {
     s.conts.length === CONTINENT_IDS.length ? '' : s.conts.map(continentName).join(', ')].filter(Boolean).join(' · ');
 }
 
-export function renderRushSettings(s, { readOnly = false } = {}) {
+export function renderRushSettings(s, { readOnly = false, fixedMode = false } = {}) {
   const off = readOnly ? 'disabled' : '';
   return `
-    <div class="d-sec"><h3>${t('rushMode')}</h3><div class="modes rush-modes">${RUSH_MODES.map(m => `
+    ${fixedMode ? '' : `<div class="d-sec"><h3>${t('rushMode')}</h3><div class="modes rush-modes">${RUSH_MODES.map(m => `
       <button class="mode-card ${s.rushMode === m ? 'active' : ''}" data-rush="rushMode" data-val="${m}" ${off}>
-        <b>${t(modeKey(m))}</b><small>${t(modeKey(m) + '_d')}</small></button>`).join('')}</div></div>
+        <b>${t(modeKey(m))}</b><small>${t(modeKey(m) + '_d')}</small></button>`).join('')}</div></div>`}
     <div class="d-sec"><h3>${t('duration')}</h3><div class="chips">${RUSH_DURATIONS.map(d => `
       <button class="chip ${s.duration === d ? 'active' : ''}" data-rush="duration" data-val="${d}" ${off}>${durationLabel(d)}</button>`).join('')}</div></div>
     ${renderLevelChips(s.levels, readOnly, 'data-rush-level')}

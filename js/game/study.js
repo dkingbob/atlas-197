@@ -31,10 +31,13 @@ import { t, lang, countryName, capitalName, continentName, territoryName } from 
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
 import { flagImage, Modal, Toast } from '../ui/components.js';
-import { SessionQueue, planSession, nextCard, lapsedCard, deckSummary, DAY_MS } from './srs.js';
+import { SessionQueue, planSession, nextCard, lapsedCard, deckSummary, isDue, DAY_MS } from './srs.js';
+import { Recap } from './recap.js';
 
 export const STUDY_NEW_COUNTS = [3, 5, 10, 15, 20];
-export const DEFAULT_STUDY_SETTINGS = { conts: CONTINENT_IDS.slice(), levels: [1, 2], newCount: 5, capitals: false };
+export const DEFAULT_STUDY_SETTINGS = { conts: CONTINENT_IDS.slice(), levels: [1, 2], newCount: 5, capitals: false, recap: 'none' };
+/** Before the new countries: nothing, a quiz on everything seen, or a slideshow of everything seen. */
+export const RECAP_CHOICES = ['none', 'quiz', 'slideshow'];
 
 const WORKING_SET = 4;
 const OK_PAUSE_MS = 700;
@@ -62,6 +65,14 @@ export function studyDeck(settings) {
     .map(c => c.id);
 }
 
+/** Countries of the deck already studied, in a map-friendly order (by region, west to east). */
+export function seenIds(settings) {
+  const cards = Store.srsCards();
+  return studyDeck(settings).filter(id => cards[id])
+    .sort((a, b) => continentOrder(COUNTRY_BY_ID.get(a).continent) - continentOrder(COUNTRY_BY_ID.get(b).continent)
+      || (MapView.record(a)?.labelLonLat?.[0] ?? 0) - (MapView.record(b)?.labelLonLat?.[0] ?? 0));
+}
+
 /** { total, fresh, due, learning, mastered, nextDue } for the setup screen. */
 export const studySummary = settings => deckSummary(studyDeck(settings), Store.srsCards(), Date.now());
 
@@ -70,11 +81,19 @@ export const studySummary = settings => deckSummary(studyDeck(settings), Store.s
    ===================================================================== */
 function start(settings) {
   stop({ silent: true });
-  const plan = planSession({ deckIds: studyDeck(settings), cards: Store.srsCards(), now: Date.now(), newLimit: settings.newCount });
-  if (!plan.reviews.length && !plan.fresh.length) return Toast.show(t('studyNothing'));
+  const recapQuiz = settings.recap === 'quiz';
+  const plan = planSession({
+    deckIds: studyDeck(settings), cards: Store.srsCards(), now: Date.now(), newLimit: settings.newCount,
+    reviewAll: recapQuiz, reviewLimit: recapQuiz ? 200 : 50,
+  });
+  const slides = settings.recap === 'slideshow' ? seenIds(settings) : [];
+  if (!plan.reviews.length && !plan.fresh.length && !slides.length) return Toast.show(t('studyNothing'));
+  const now = Date.now();
   run = {
     settings,
-    queue: new SessionQueue({ ...plan, workingSet: WORKING_SET }),
+    plan,
+    early: new Set(plan.reviews.filter(id => !isDue(Store.srsCards()[id], now))), // recap quiz: not due yet
+    queue: new SessionQueue({ ...plan, workingSet: WORKING_SET, reviewsFirst: recapQuiz }),
     current: null,       // { id, step, kind }
     phase: '',           // see render()
     missed: false,       // a mistake on the current country (this round)
@@ -88,12 +107,25 @@ function start(settings) {
   onModeChange(true);
   document.body.classList.add('in-study');
   prepareMap();
+  if (slides.length) {
+    run.phase = 'recap';
+    Recap.play(slides, {
+      onDone: () => {
+        if (!run) return;
+        if (!plan.reviews.length && !plan.fresh.length) { Toast.show(t('recapDone')); return stop(); }
+        next();
+      },
+      onQuit: () => stop(),
+    });
+    return;
+  }
   next();
 }
 
 function stop({ silent = false } = {}) {
   if (!run) return;
   run.over = true;
+  Recap.stop();
   clearCountryFromMap();
   run = null;
   card().classList.remove('show');
@@ -170,7 +202,10 @@ function saveCard(entry) {
   const now = Date.now();
   const cards = Store.srsCards();
   const wasReview = entry.kind !== 'fresh';
-  Store.setSrsCard(entry.id, nextCard(cards[entry.id], { wasReview, cleanReview: entry.clean, now }));
+  // a recap of a country not due yet does not move it up a box (that would skip the spacing)
+  if (!(run.early.has(entry.id) && entry.clean)) {
+    Store.setSrsCard(entry.id, nextCard(cards[entry.id], { wasReview, cleanReview: entry.clean, now }));
+  }
   if (entry.kind === 'fresh') run.newLearned++;
   else { run.reviewed++; if (entry.clean) run.reviewedClean++; }
 }
@@ -439,6 +474,7 @@ export const Study = {
   /** @param {{ onModeChange: (inGame: boolean) => void }} callbacks */
   init(callbacks) {
     onModeChange = callbacks.onModeChange;
+    Recap.init();
     card().addEventListener('submit', e => { e.preventDefault(); onSubmit($('input', card()).value); });
     card().addEventListener('click', e => { if (e.target.closest('[data-act="reveal"]')) reveal(); });
     hud().addEventListener('click', e => { if (e.target.closest('[data-act="quit"]')) stop(); });
@@ -448,7 +484,12 @@ export const Study = {
   stop,
   isRunning: () => Boolean(run),
   onPlaceClick,
-  refresh() { if (run && !run.over) { render(); renderHud(); } },
+  refresh() {
+    if (!run || run.over) return;
+    if (run.phase === 'recap') return Recap.refresh();
+    render();
+    renderHud();
+  },
   /** Snapshot for tests and the console. */
   peek: () => (run ? { id: run.current?.id || null, phase: run.phase, kind: run.current?.kind, done: run.queue.done, total: run.queue.total, over: run.over } : null),
 };

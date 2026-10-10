@@ -123,3 +123,13 @@ details.filters[open] summary::after{transform:rotate(-135deg)}
 .p-results small{color:var(--muted);font-weight:700}
 .p-results strong{font-family:var(--display);font-size:24px}
 .p-medal{font-size:24px;text-align:center;font-weight:800;color:var(--muted)}
+
+/* Memory & backup (progress dialog) */
+.btn.sm{padding:8px 12px;font-size:13px;border-radius:11px}
+.btn.sm .ico{width:16px;height:16px}
+.mem-rows{display:grid;gap:8px;margin-top:10px}
+.mem-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:13px;background:#f3f6f9;font-weight:700;font-size:14px;flex-wrap:wrap}
+.mem-btns{display:flex;gap:8px}
+.mem-btns label{cursor:pointer}
+#address-banner{position:fixed;z-index:110;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:16px;font-weight:700;font-size:13.5px;max-width:calc(100% - 24px);flex-wrap:wrap}
+.count-input{width:96px;padding:8px 10px}

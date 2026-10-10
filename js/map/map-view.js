@@ -169,6 +169,7 @@ function render() {
     .translateExtent([[-width * 0.3, -height * 0.3], [width * 1.3, height * 1.3]]);
   refreshLanguage();
   highlight.redraw();
+  if (pinPoints.length) MapView.setPins(pinPoints); // re-project pins (e.g. new map centre)
   d3.select(wrap).call(zoom.transform, d3.zoomIdentity);
   commit();
 }
@@ -338,12 +339,19 @@ function moveTooltip(e) {
 }
 function hideTooltip() { tooltip.classList.remove('show'); }
 
+/** [lon, lat] of the point under a mouse / touch event. */
+function lonLatOf(e) {
+  const [x, y] = transform.invert(d3.pointer(e, svg.node()));
+  return projection.invert([x, y]);
+}
+
 /** Click on the ocean → [lon, lat] of that point. */
 function onWaterClick(e) {
   if (!handlers.waterClick) return;
-  const [x, y] = transform.invert(d3.pointer(e, svg.node()));
-  handlers.waterClick(projection.invert([x, y]), e);
+  handlers.waterClick(lonLatOf(e), e);
 }
+
+let pinPoints = []; // [{ lonLat, cls }] — re-projected when the map changes
 
 /* =====================================================================
    ZOOM HELPERS
@@ -464,6 +472,15 @@ export const MapView = {
   setFlagShown(rec, on) { if (rec) flags.apply(rec, on || display === 'flag' || rec.revealed); },
   /** Pulsing outline around places, without changing their colour (rush modes). */
   setPulse(list) { highlight.setTargets(list || []); },
+  /** Pins at [lon, lat] points (capital pin game): [{ lonLat, cls }]; [] to clear. */
+  setPins(list) {
+    pinPoints = list || [];
+    highlight.setPins(pinPoints.map(p => ({ cls: p.cls, xy: projection(p.lonLat) })).filter(p => p.xy));
+  },
+  /** [lon, lat] under a click (land or sea). */
+  lonLatOf,
+  /** Is [lon, lat] inside this place's shape? */
+  contains: (rec, lonLat) => Boolean(rec?.feature && lonLat && d3.geoContains(rec.feature, lonLat)),
   /** Drag & drop feedback: lift the place under the dragged flag. */
   setDropTarget(rec) { if (rec) highlight.showHover(rec); else highlight.clearHover(); },
 

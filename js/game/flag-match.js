@@ -40,6 +40,7 @@ function makeBatches(items) {
 function start() {
   const { state } = ctx;
   state.batches = makeBatches(state.questions.map(q => q.item));
+  state.questions.forEach(q => ctx.markAsked(q.item));
   state.batchIndex = 0;
   state.matchedCount = 0;      // flags placed or skipped (drives the progress bar)
   state.missedIds = new Set(); // flags that had at least one wrong drop

@@ -22,6 +22,7 @@ import { flagImage, Toast } from '../ui/components.js';
 
 const FEEDBACK_MS = { correct: 950, wrong: 2200, skip: 1600 };
 const card = () => $('#qcard');
+const count = n => (n === Infinity ? '∞' : n);
 let ctx = null; // shared game context (see game.js)
 
 /* ---------- flow ---------- */
@@ -36,7 +37,9 @@ function nextQuestion() {
     const previous = state.questions.at(-1)?.item;
     state.questions.push({ kind: 'country', item: ctx.nextHardCountry(previous) });
   }
+  ctx.ensureQuestion();
   state.question = state.questions[state.index];
+  ctx.markAsked(state.question.item);
   state.locked = false;
   state.usedHint = false;
   state.removedOptions = new Set();
@@ -140,8 +143,8 @@ function render({ keepTyped = false } = {}) {
     </div>
     ${input ? `<div class="q-body">${input}</div>` : ''}
     <div class="q-foot">
-      <button class="q-tool" data-act="hint" ${state.hints && !state.locked ? '' : 'disabled'}>${ICONS.bulb}${t('hint')}<span class="n">${state.hints}</span></button>
-      <button class="q-tool" data-act="skip" ${state.skips && !state.locked ? '' : 'disabled'}>${ICONS.skip}${t('skip')}<span class="n">${state.skips}</span></button>
+      <button class="q-tool" data-act="hint" ${state.hints && !state.locked ? '' : 'disabled'}>${ICONS.bulb}${t('hint')}<span class="n">${count(state.hints)}</span></button>
+      <button class="q-tool" data-act="skip" ${state.skips && !state.locked ? '' : 'disabled'}>${ICONS.skip}${t('skip')}<span class="n">${count(state.skips)}</span></button>
       <span class="q-hintline">${escapeHtml(state.hintLine || '')}</span>
       <div class="q-feedback ${state.feedbackType || ''}">${escapeHtml(state.feedback || '')}</div>
     </div>`;

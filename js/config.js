@@ -18,6 +18,8 @@ export const CONFIG = {
   SKIPS: 1,                // per game
 
   STORAGE_KEY: 'atlas197.v1',
+  /** Official address. Progress is saved per address, so other addresses start empty. */
+  HOME_URL: 'https://atlas-197.vercel.app/',
 
   /** Party (multiplayer): WebRTC library, loaded only when a party is opened. */
   PEERJS_URL: 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',

@@ -18,8 +18,24 @@ export function createHighlightLayer(container) {
   const root = svg.append('g');
   const targetGroup = root.append('g');
   const hoverGroup = root.append('g');
+  const pinGroup = root.append('g');
   let scale = 1;
   let targets = [];
+  let pins = [];     // [{ xy, cls }] — capital pin game: your guess and the answer
+
+  /** Pins keep the same size on screen whatever the zoom; a dashed line joins the first two. */
+  function drawPins() {
+    pinGroup.selectAll('*').remove();
+    if (pins.length >= 2) {
+      pinGroup.append('line').attr('class', 'fx-pinline')
+        .attr('x1', pins[0].xy[0]).attr('y1', pins[0].xy[1]).attr('x2', pins[1].xy[0]).attr('y2', pins[1].xy[1])
+        .style('stroke-width', 2.2 / scale).style('stroke-dasharray', `${6 / scale} ${5 / scale}`);
+    }
+    for (const pin of pins) {
+      pinGroup.append('circle').attr('class', `fx-pin ${pin.cls}`)
+        .attr('cx', pin.xy[0]).attr('cy', pin.xy[1]).attr('r', 7 / scale).style('stroke-width', 2.5 / scale);
+    }
+  }
 
   function liftScale(rec) {
     const [[x0, y0], [x1, y1]] = rec.boxAll;
@@ -54,6 +70,7 @@ export function createHighlightLayer(container) {
       root.attr('transform', transform);
       scale = transform.k;
       drawTargets();
+      drawPins();
     },
 
     showHover(rec) {
@@ -76,6 +93,9 @@ export function createHighlightLayer(container) {
 
     /** Records that should pulse (game targets). Pass [] to clear. */
     setTargets(list) { targets = list; drawTargets(); },
+
+    /** Points to mark on the map ([{ xy, cls }]); [] to clear. */
+    setPins(list) { pins = list; drawPins(); },
 
     /** Shapes moved (resize / re-projection): redraw what is shown. */
     redraw() { drawTargets(); hoverGroup.selectAll('*').remove(); },

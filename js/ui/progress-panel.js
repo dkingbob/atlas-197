@@ -69,6 +69,44 @@ function hardListSection(hard) {
   }).join('')}</div>`;
 }
 
+/** Game memory, study memory, backup / restore. */
+function memorySection() {
+  const studied = Object.keys(Store.srsCards()).length;
+  return `
+    <p class="note tight">${t('memoryLead')}</p>
+    <div class="mem-rows">
+      <div class="mem-row"><span>${t('memoryGames', { n: Store.askedCount() })}</span>
+        <button class="btn btn-soft sm" data-act="clear-asked" ${Store.askedCount() ? '' : 'disabled'}>${ICONS.trash}${t('clear')}</button></div>
+      <div class="mem-row"><span>${t('memoryStudy', { n: studied })}</span>
+        <button class="btn btn-soft sm" data-act="clear-study" ${studied ? '' : 'disabled'}>${ICONS.trash}${t('clear')}</button></div>
+      <div class="mem-row"><span>${t('backupLead')}</span>
+        <span class="mem-btns"><button class="btn btn-soft sm" data-act="backup">${ICONS.download}${t('backup')}</button>
+        <label class="btn btn-soft sm">${ICONS.upload}${t('restore')}<input type="file" accept=".json,application/json" data-act-file="restore" hidden></label></span></div>
+    </div>`;
+}
+
+function downloadBackup() {
+  const blob = new Blob([Store.exportBackup()], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `atlas197-progress-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+async function restoreBackup(file) {
+  try {
+    Store.importBackup(await file.text());
+    render();
+    onReset();
+    Toast.show(t('restored'));
+  } catch {
+    Toast.show(t('restoreBad'), 3500);
+  }
+}
+
 function render() {
   const hard = Store.hardIds().map(id => COUNTRY_BY_ID.get(id)).filter(Boolean)
     .sort((a, b) => countryName(a).localeCompare(countryName(b), lang()));
@@ -80,6 +118,7 @@ function render() {
       <div class="d-sec"><h3>${t('studyMemory')}</h3>${studySection()}</div>
       <div class="d-sec"><h3>${t('bySubject')}</h3>${accuracySection()}</div>
       <div class="d-sec"><h3>${t('hardList')} (${hard.length})</h3>${hardListSection(hard)}</div>
+      <div class="d-sec"><h3>${t('memoryTitle')}</h3>${memorySection()}</div>
       <div class="d-foot"><span class="pool"></span>
         ${hard.length ? `<button class="btn btn-accent" data-act="playhard">${ICONS.repeat}${t('playHard')}</button>` : ''}
         <button class="btn btn-soft" data-act="reset">${ICONS.trash}${t('reset')}</button>
@@ -95,6 +134,13 @@ function onClick(e) {
   const action = e.target.closest('[data-act]')?.dataset.act;
   if (action === 'close') Modal.close(ID);
   if (action === 'playhard') { Modal.close(ID); onPlayHardList(); }
+  if (action === 'backup') downloadBackup();
+  if (action === 'clear-asked') {
+    Modal.confirm({ title: t('clearAskedTitle'), text: t('clearAskedText'), okLabel: t('clear') }, () => { Store.clearAsked(); render(); Toast.show(t('cleared')); });
+  }
+  if (action === 'clear-study') {
+    Modal.confirm({ title: t('clearStudyTitle'), text: t('clearStudyText'), okLabel: t('clear') }, () => { Store.clearStudy(); render(); onReset(); Toast.show(t('cleared')); });
+  }
   if (action === 'reset') {
     Modal.confirm({ title: t('resetTitle'), text: t('resetConfirm'), okLabel: t('confirm') }, () => {
       Store.reset();
@@ -111,6 +157,9 @@ export const ProgressPanel = {
     onPlayHardList = callbacks.onPlayHardList;
     onReset = callbacks.onChange;
     $('#' + ID).addEventListener('click', onClick);
+    $('#' + ID).addEventListener('change', e => {
+      if (e.target.dataset.actFile === 'restore' && e.target.files[0]) restoreBackup(e.target.files[0]);
+    });
   },
   open() { render(); Modal.open(ID); },
   refresh() { if (Modal.isOpen(ID)) render(); },

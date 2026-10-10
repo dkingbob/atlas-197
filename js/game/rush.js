@@ -21,7 +21,8 @@ import { COUNTRIES, COUNTRY_BY_ID } from '../data/countries/index.js';
 import { levelOf, pointsFor, LEVEL_IDS } from '../data/difficulty.js';
 import { Answers } from '../core/answers.js';
 import { Store } from '../core/store.js';
-import { $, escapeHtml, shuffle } from '../core/utils.js';
+import { $, escapeHtml } from '../core/utils.js';
+import { freshOrder } from './pool.js';
 import { t, countryName, capitalName, continentName, territoryName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
@@ -53,9 +54,9 @@ export function buildRushSequence(settings) {
   const levels = settings.levels?.length ? settings.levels : LEVEL_IDS;
   const conts = settings.conts?.length ? settings.conts : CONTINENT_IDS;
   const pool = COUNTRIES.filter(c => levels.includes(levelOf(c.id)) && conts.includes(c.continent));
-  if (settings.rushMode !== 'survival') return shuffle(pool).map(c => c.id);
+  if (settings.rushMode !== 'survival') return freshOrder(pool).map(c => c.id);
   // survival: easy first, then harder and harder
-  return LEVEL_IDS.flatMap(level => shuffle(pool.filter(c => levelOf(c.id) === level))).map(c => c.id);
+  return LEVEL_IDS.flatMap(level => freshOrder(pool.filter(c => levelOf(c.id) === level))).map(c => c.id);
 }
 
 export const rushPoolSize = settings => buildRushSequence(settings).length;
@@ -155,6 +156,7 @@ function next() {
   run.feedback = '';
   run.hintText = '';
   if (run.index >= run.ids.length) return finish('done');
+  Store.markAsked(run.ids[run.index]);
   showOnMap();
   render();
   reportProgress();

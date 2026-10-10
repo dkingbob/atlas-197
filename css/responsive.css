@@ -21,7 +21,7 @@
   #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:72%;max-width:none;transform:translateY(calc(100% + 30px))}
   #panel.open{transform:none}
   #hud{gap:9px;padding:7px 8px 7px 12px;font-size:13px}
-  .hud-stat span{display:none}
+  .hud-stat span{font-size:9px;letter-spacing:.04em}
   .hud-prog{width:60px}
   .q-prompt{font-size:19px}
   .q-opts{gap:6px}
@@ -64,4 +64,10 @@
   .s-learn{gap:12px}
   .s-hook{display:none}
   .s-recall-flag > img{width:110px;height:74px}
+}
+@media (max-width:720px){
+  /* 5 nav buttons: icon above a small label so they all fit */
+  .nav button{flex-direction:column;gap:1px;padding:5px 2px;font-size:10.5px;border-radius:14px;min-width:0}
+  .nav{border-radius:18px}
+  .nav button .ico{width:17px;height:17px}
 }

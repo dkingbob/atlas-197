@@ -45,10 +45,12 @@ export const lapsedCard = (card, now) => ({ box: 1, due: now, lapses: (card?.lap
  * What a session will contain.
  * @param deckIds   countries in the chosen deck, easiest first
  * @param cards     { [id]: card } saved cards
+ * @param reviewAll true = review everything already studied, due or not
  * @returns { reviews: ids due (most overdue first), fresh: ids never studied (up to newLimit) }
  */
-export function planSession({ deckIds, cards, now, newLimit, reviewLimit = 50 }) {
-  const reviews = deckIds.filter(id => isDue(cards[id], now))
+export function planSession({ deckIds, cards, now, newLimit, reviewLimit = 50, reviewAll = false }) {
+  // reviewAll: every country already studied (the "recap quiz"), not only those due today
+  const reviews = deckIds.filter(id => (reviewAll ? Boolean(cards[id]) : isDue(cards[id], now)))
     .sort((a, b) => cards[a].due - cards[b].due).slice(0, reviewLimit);
   const fresh = deckIds.filter(id => !cards[id]).slice(0, newLimit);
   return { reviews, fresh };
@@ -75,8 +77,10 @@ export class SessionQueue {
    * @param reviews     ids due for review (asked straight away, no presentation)
    * @param fresh       new ids (presented first, then recalled)
    * @param workingSet  how many new countries are being learned at the same time
+   * @param reviewsFirst  finish every review before the first new country (recap quiz)
    */
-  constructor({ reviews = [], fresh = [], workingSet = 4 }) {
+  constructor({ reviews = [], fresh = [], workingSet = 4, reviewsFirst = false }) {
+    this.reviewsFirst = reviewsFirst;
     this.turn = 0;
     this.workingSet = workingSet;
     this.waiting = fresh.slice();            // new countries not introduced yet
@@ -85,7 +89,7 @@ export class SessionQueue {
     this.lastId = null;
     this.total = reviews.length + fresh.length;
     // reviews are spread out so new countries can be slipped in between them
-    reviews.forEach((id, i) => this.active.set(id, this.item(id, 'review', 1 + i * 2)));
+    reviews.forEach((id, i) => this.active.set(id, this.item(id, 'review', reviewsFirst ? 1 + i : 1 + i * 2)));
   }
 
   item(id, kind, dueAt) {
@@ -104,7 +108,8 @@ export class SessionQueue {
     if (!this.active.size && !this.waiting.length) return null;
     this.turn++;
     let item = this.pick(it => it.dueAt <= this.turn);
-    if (!item && this.waiting.length && this.learningCount() < this.workingSet) item = this.introduce();
+    const reviewsLeft = this.reviewsFirst && [...this.active.values()].some(it => it.kind !== 'fresh');
+    if (!item && this.waiting.length && !reviewsLeft && this.learningCount() < this.workingSet) item = this.introduce();
     if (!item) item = this.pick(() => true); // nothing is due yet: take the closest one
     this.lastId = item.id;
     const step = item.present ? 'present' : 'recall';
