@@ -4,7 +4,7 @@
  * Offline mode (CI sandboxes without internet): set ATLAS_OFFLINE_VENDOR to a
  * folder containing d3.min.js, topojson-client.min.js and countries-50m.json.
  * CDN requests are then served from that folder and flags are replaced by
- * generated placeholders.
+ * generated placeholders. Put peerjs.min.js there too for the party tests.
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -39,6 +39,7 @@ async function routeOffline(context, vendorDir) {
     const url = route.request().url();
     if (url.includes('/d3@')) return route.fulfill({ path: path.join(vendorDir, 'd3.min.js'), contentType: 'text/javascript' });
     if (url.includes('topojson-client')) return route.fulfill({ path: path.join(vendorDir, 'topojson-client.min.js'), contentType: 'text/javascript' });
+    if (url.includes('/peerjs@')) return route.fulfill({ path: path.join(vendorDir, 'peerjs.min.js'), contentType: 'text/javascript' });
     if (url.includes('world-atlas')) return route.fulfill({ path: path.join(vendorDir, 'countries-50m.json'), contentType: 'application/json' });
     const flag = url.match(/flagcdn\.com\/([a-z-]+)\.svg/);
     if (flag) return route.fulfill({ body: placeholderFlag(flag[1]), contentType: 'image/svg+xml' });
@@ -51,9 +52,12 @@ async function routeOffline(context, vendorDir) {
 /**
  * Open the app and wait for the map. Returns { browser, page, errors }.
  * `fastTimers` divides setTimeout delays so feedback pauses don't slow tests down.
+ * `peerPort` points party games to a local signaling server (tests/peer-server.mjs).
+ * `browser` reuses an open browser (several players in one test).
  */
-export async function openApp(url, { width = 1440, height = 900, mobile = false, fastTimers = false } = {}) {
-  const browser = await chromium.launch();
+export async function openApp(url, { width = 1440, height = 900, mobile = false, fastTimers = false, peerPort = 0, browser: shared = null } = {}) {
+  // Chrome hides local IPs behind mDNS names by default, which do not resolve in sandboxes.
+  const browser = shared || await chromium.launch({ args: ['--disable-features=WebRtcHideLocalIpsWithMdns'] });
   const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile });
   if (process.env.ATLAS_OFFLINE_VENDOR) await routeOffline(context, process.env.ATLAS_OFFLINE_VENDOR);
   if (fastTimers) {
@@ -61,6 +65,11 @@ export async function openApp(url, { width = 1440, height = 900, mobile = false,
       const original = window.setTimeout;
       window.setTimeout = (fn, ms, ...args) => original(fn, (ms || 0) / 6, ...args);
     });
+  }
+  if (peerPort) {
+    await context.addInitScript(port => {
+      window.ATLAS_PEER_OPTIONS = { host: '127.0.0.1', port, path: '/', secure: false, config: { iceServers: [] } };
+    }, peerPort);
   }
   const page = await context.newPage();
   const errors = [];

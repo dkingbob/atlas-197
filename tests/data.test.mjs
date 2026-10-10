@@ -54,3 +54,14 @@ test('territories and waters have both languages', () => {
 test('UI strings exist in both languages', () => {
   assert.deepEqual(Object.keys(STRINGS.en).sort(), Object.keys(STRINGS.fr).sort());
 });
+
+test('difficulty: every country has exactly one level, level 5 is small', async () => {
+  const { LEVELS, LEVEL_POINTS, pointsFor } = await import('../js/data/difficulty.js');
+  const all = Object.values(LEVELS).flat();
+  assert.equal(all.length, 197);
+  assert.equal(new Set(all).size, 197);
+  for (const c of COUNTRIES) assert.ok(all.includes(c.id), c.id);
+  assert.ok(LEVELS[5].length <= 20);
+  assert.ok(LEVEL_POINTS[5] > LEVEL_POINTS[1]);
+  assert.equal(pointsFor('TV'), LEVEL_POINTS[5]);
+});

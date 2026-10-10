@@ -43,3 +43,15 @@
   body.in-game .zoom-ctrl{top:calc(var(--top) + 56px)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+@media (max-width:720px){
+  #rush-card{bottom:8px;padding:14px}
+  .r-flag img{width:84px;height:56px}
+  #rush-hud{gap:9px;padding:7px 8px 7px 12px;font-size:13px}
+  #rush-hud .hud-stat span,#rush-hud .rh-time span{display:inline;font-size:9.5px}
+  #scoreboard{top:calc(var(--top) + 56px);left:8px;right:auto;width:150px;padding:8px 10px;font-size:13px}
+  .p-entry{grid-template-columns:1fr}
+  .p-or{text-align:center}
+  .p-slots{grid-template-columns:1fr}
+  .p-code-big{font-size:26px}
+  .p-room{flex-wrap:wrap}
+}

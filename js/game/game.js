@@ -18,12 +18,14 @@ import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
 import { flagImage, Modal, Toast } from '../ui/components.js';
 import { buildCountryPool, pickWeighted } from './pool.js';
+import { pointsFor } from '../data/difficulty.js';
 import { QuestionRound } from './question-round.js';
 import { FlagMatch } from './flag-match.js';
 
 const HUD = () => $('#hud');
 const END_ID = 'end-modal';
-const POINTS = { base: 10, withHint: 5, streakBonus: 2, maxStreakBonusSteps: 5 };
+/** Countries are worth their difficulty points (data/difficulty.js); oceans the base value. A hint halves them. */
+const POINTS = { base: 10, streakBonus: 2, maxStreakBonusSteps: 5 };
 
 let config = null;      // settings of the running game
 let state = null;       // live session state (see start())
@@ -54,7 +56,8 @@ const context = {
   scoreAnswer({ correct, countryId, reduced = false }) {
     let points = 0;
     if (correct) {
-      points = (reduced ? POINTS.withHint : POINTS.base) + Math.min(state.streak, POINTS.maxStreakBonusSteps) * POINTS.streakBonus;
+      const value = countryId ? pointsFor(countryId) : POINTS.base;
+      points = (reduced ? Math.round(value / 2) : value) + Math.min(state.streak, POINTS.maxStreakBonusSteps) * POINTS.streakBonus;
       state.score += points;
       state.streak++;
       state.bestStreak = Math.max(state.bestStreak, state.streak);

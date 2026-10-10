@@ -142,7 +142,7 @@ function render() {
   for (const rec of records) {
     if (rec.feature) {
       rec.pathEl.setAttribute('d', path(rec.feature) || '');
-      rec.box = path.bounds(rec.mainShape);
+      rec.box = largestPieceBounds(rec.mainShape);
       rec.boxAll = path.bounds(rec.feature);
     }
     rec.labelXY = projection(rec.labelLonLat);
@@ -171,6 +171,32 @@ function render() {
   highlight.redraw();
   d3.select(wrap).call(zoom.transform, d3.zoomIdentity);
   commit();
+}
+
+/**
+ * Screen box of the biggest drawn piece of a shape.
+ * A shape that crosses the map edge (e.g. Russia, cut at the 180° line) is
+ * drawn as several pieces; path.bounds() would span the whole map width,
+ * which broke labels, zoom and the flag fill. Rings are collected from the
+ * projected path and the one with the largest area wins.
+ */
+function largestPieceBounds(feature) {
+  const rings = [];
+  let ring = null;
+  const recorder = {
+    moveTo(x, y) { ring = [[x, y]]; rings.push(ring); },
+    lineTo(x, y) { ring?.push([x, y]); },
+    closePath() { ring = null; },
+    arc() {}, rect() {},
+  };
+  d3.geoPath(projection, recorder)(feature);
+  let best = null, bestArea = -1;
+  for (const r of rings) {
+    const area = Math.abs(d3.polygonArea(r));
+    if (area > bestArea) { bestArea = area; best = r; }
+  }
+  if (!best) return path.bounds(feature);
+  return [[d3.min(best, p => p[0]), d3.min(best, p => p[1])], [d3.max(best, p => p[0]), d3.max(best, p => p[1])]];
 }
 
 function setCenter(lon) {
@@ -434,6 +460,10 @@ export const MapView = {
       rec.labelEl.classList.toggle('dim', rec.dimmed);
     }
   },
+  /** Paint one place with its flag (even in gray mode), without showing its name. */
+  setFlagShown(rec, on) { if (rec) flags.apply(rec, on || display === 'flag' || rec.revealed); },
+  /** Pulsing outline around places, without changing their colour (rush modes). */
+  setPulse(list) { highlight.setTargets(list || []); },
   /** Drag & drop feedback: lift the place under the dragged flag. */
   setDropTarget(rec) { if (rec) highlight.showHover(rec); else highlight.clearHover(); },
 

@@ -7,9 +7,10 @@
  *   answer     'click' | 'type' | 'mc'        (ignored by flag match)
  *   continent  continent id                  (continent mode only)
  *   count      number of questions, 0 = all
- *   filters    { conts: string[], excluded: string[], excludeKnown: boolean, onlyHard: boolean }
+ *   filters    { conts: string[], levels: number[] (1–5), excluded: string[], excludeKnown: boolean, onlyHard: boolean }
  */
 import { COUNTRIES } from '../data/countries/index.js';
+import { levelOf } from '../data/difficulty.js';
 import { Store } from '../core/store.js';
 
 export function buildCountryPool(config) {
@@ -22,6 +23,7 @@ export function buildCountryPool(config) {
       return false;
     }
     if (excluded.has(c.id)) return false;
+    if (filters.levels?.length && !filters.levels.includes(levelOf(c.id))) return false;
     if ((filters.excludeKnown || config.mode === 'learn') && Store.isKnown(c.id)) return false;
     if ((filters.onlyHard || config.mode === 'hard') && !Store.isHard(c.id)) return false;
     return true;

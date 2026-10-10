@@ -4,6 +4,10 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 
 - **Explore** the map: hover a country to see its name, click it for its flag, capital, a short history and 3 key facts.
 - **Play** 6 game modes × 3 subjects (country name, capital, location) × 3 answer types (click the map, type, multiple choice).
+- **Rush**: timed rounds — name as many countries as you can before the clock runs out. 5 types: *flag on the map*, *flag only*, *capitals*, *map hunt*, *survival*.
+- **Party**: play Rush with up to 4 friends. The host picks the settings, everyone gets the same countries, live scoreboard, final ranking. Share a 5-letter room code or an invite link.
+- **5 difficulty levels** (easy → very hard). Harder countries are worth more points (10 / 15 / 20 / 30 / 50) and every mode can be filtered by level.
+- **Forgiving typing**: English or French, accents optional, typos and spellings that *sound* right are accepted ("Filipines", "Djibuti", "Kazakstan") — but never a different country ("Niger" ≠ Nigeria).
 - **Track progress**: mark countries as known, keep a "hard list" that comes back more often, see your accuracy per subject.
 
 No framework, no build step: plain HTML, CSS and JavaScript modules.
@@ -43,14 +47,15 @@ css/
   map.css               Map, markers, labels, highlight layer, tooltip
   layout.css            Top bar, zoom buttons, legend, loader, toast
   panel.css             Country panel (explore mode)
-  game.css              HUD, question card, flag match
-  modals.css            Setup dialog, end screen, progress, confirm
+  game.css              HUD, question card, flag match, rush card, scoreboard
+  modals.css            Setup dialog, end screen, progress, confirm, party
   responsive.css        Tablet / phone layouts
 js/
   main.js               Entry point: loads the map and wires everything together
-  config.js             Constants: data URLs, lives/hints/skips, continents
+  config.js             Constants: data URLs, lives/hints/skips, party, continents
   data/
     countries/*.js      One file per continent — the country data (EN + FR)
+    difficulty.js       Level 1–5 of every country and the points per level
     territories.js      Non-quizzable territories, overseas parts, merged shapes
     waters.js           Oceans & seas: names, label positions, rough outlines
   i18n/
@@ -58,7 +63,8 @@ js/
     i18n.js             t(), current language, name helpers
   core/
     store.js            Saved progress (localStorage) — swap point for a backend
-    answers.js          Checks typed answers (aliases, accents, small typos)
+    answers.js          Checks typed answers (aliases, accents, typos, sound-alikes)
+    phonetic.js         Sound-alike key for EN/FR spellings
     utils.js            Small helpers
   map/
     map-view.js         The map: drawing, zoom, labels, hover, public API
@@ -70,6 +76,8 @@ js/
   ui/
     country-panel.js    Explore panel
     setup-dialog.js     "Start a game" dialog and filters
+    rush-settings.js    Rush settings form (shared by solo setup and party lobby)
+    party-dialog.js     Party: create/join a room, lobby, countdown, results
     progress-panel.js   "My progress" dialog
     components.js       Flag image, toast, modal helpers
     icons.js            Inline SVG icons
@@ -78,9 +86,17 @@ js/
     question-round.js   Click / type / multiple-choice questions
     flag-match.js       Drag & drop flags
     pool.js             Which countries a game uses (filters, hard-list weighting)
+    rush.js             Timed Rush rounds (solo and party)
+  net/
+    peer-transport.js   PeerJS (WebRTC) loading and connections
+    lobby.js            Party room: players, settings, start, scores, results
 tests/
   data.test.mjs         Data integrity (runs in Node)
   e2e.test.mjs          Plays every mode in a headless browser
+  answers.test.mjs      Typed-answer matching (runs in Node)
+  rush.test.mjs         Every Rush type, scoring, hints, timer
+  party.test.mjs        4 browsers in one room (+ a refused 5th)
+  peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
 ```
 
@@ -90,11 +106,23 @@ tests/
 main.js ──► MapView (map)         click on a place ──► CountryPanel (explore)
    │                                               └─► Game (when a game is running)
    ├──► SetupDialog ──onStart(config)──► Game ──► QuestionRound | FlagMatch
+   │                                 └──► Rush (timed modes)
+   ├──► PartyDialog ──► Lobby (net/) ◄──WebRTC──► other players
+   │         └──────► Rush (same countries for everyone)
    ├──► ProgressPanel
    └──► Store (all saved data), i18n (all text)
 ```
 
 Modules never reach into each other's DOM: they talk through the small APIs exported at the bottom of each file (`MapView.setState(...)`, `Game.start(config)`, …). `main.js` passes callbacks between them so there are no circular imports.
+
+### How Party works (no game server)
+
+Players connect **directly to each other** over WebRTC using [PeerJS](https://peerjs.com). The free PeerJS cloud is only used for the handshake, so the site stays fully static on Vercel.
+
+- The **host's browser is the referee** (star topology): it keeps the player list, picks the countries, collects scores and sends the results.
+- The room code `ABCDE` is the host's PeerJS id `atlas197-ABCDE`; the invite link is `/?room=ABCDE`.
+- Messages are listed at the top of `js/net/lobby.js`. Max 4 players (`CONFIG.PARTY_MAX_PLAYERS`).
+- If the host leaves, the room closes. On very strict networks a direct connection can fail; switching network (e.g. phone hotspot) usually fixes it.
 
 ### Why the map is smooth
 
@@ -112,6 +140,8 @@ Measured in headless Chromium while dragging the map: ~23 fps before → steady 
 ## Editing content
 
 **Fix or improve a country** — edit its entry in `js/data/countries/<continent>.js`. Each file starts with a description of the fields. Keep `history` to 3–5 sentences and `keyFacts` to exactly 3 items in both languages (the tests check this).
+
+**Change a country's difficulty** — move its id to another list in `js/data/difficulty.js` (points per level are there too).
 
 **Accept another spelling in typed answers** — add it to the country's `aliases` (or `capitalAliases`).
 
@@ -134,9 +164,11 @@ npm test
 ```
 
 - `data.test.mjs` checks the data: 197 countries, unique ids, complete EN/FR texts, 3 facts each.
+- `answers.test.mjs` checks typo / sound-alike tolerance and that no country is ever accepted for another one.
+- `rush.test.mjs` plays every Rush type; `party.test.mjs` runs a 4-player party through a local signaling server.
 - `e2e.test.mjs` plays every game mode (win and lose), hints, skips, drag & drop, the setup filters, the progress reset, both languages, and opens all 197 country panels.
 
-The end-to-end tests load d3, the map and flags from their CDNs. Without internet, point `ATLAS_OFFLINE_VENDOR` to a folder containing `d3.min.js`, `topojson-client.min.js` and `countries-50m.json`.
+The end-to-end tests load d3, the map and flags from their CDNs. Without internet, point `ATLAS_OFFLINE_VENDOR` to a folder containing `d3.min.js`, `topojson-client.min.js`, `countries-50m.json` and `peerjs.min.js`.
 
 ## Data sources
 

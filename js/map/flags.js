@@ -2,13 +2,13 @@
 /**
  * Flag fills: each country can be painted with its flag through an SVG <pattern>.
  *
- * Browsers ignore preserveAspectRatio="slice" for SVG images, so the "cover"
- * box (fill the shape, crop the overflow) is computed here from each flag's
- * real aspect ratio, which is read once by loading the image.
+ * The flag's real aspect ratio is read once by loading the image, then the
+ * pattern is sized so every stripe stays visible (see fit()).
  */
 import { CONFIG } from '../config.js';
 
 const DEFAULT_ASPECT = 1.5; // most flags are 3:2 — used until the real ratio is known
+const MAX_STRETCH = 1.35;   // how much a flag may be stretched to fill a shape
 
 export function createFlagFills(defs) {
   const aspectByCode = new Map(); // code → ratio, or an array of callbacks while loading
@@ -39,15 +39,26 @@ export function createFlagFills(defs) {
     loadAspect(rec.flagCode, ratio => { rec.flagAspect = ratio; fit(rec); });
   }
 
-  /** Size the patterns so the flag covers the shape's main box (call again after a re-projection). */
+  /**
+   * Size the pattern so the WHOLE flag stays visible (no stripe cropped away):
+   *   - shape roughly the flag's proportions → stretch the flag (max ×1.35) to fill it
+   *   - much wider (Russia) → full height, the flag repeats sideways
+   *   - much taller (Chile) → full width, the flag repeats downwards
+   * One copy is always centred on the shape. Call again after a re-projection.
+   */
   function fit(rec) {
     if (!rec.shapePattern || !rec.box) return;
     const [[x0, y0], [x1, y1]] = rec.box;
     const w = Math.max(x1 - x0, 0.5), h = Math.max(y1 - y0, 0.5), ratio = rec.flagAspect;
-    const wider = w / h > ratio;
-    const imgW = wider ? w : h * ratio, imgH = wider ? w / ratio : h;
-    d3.select(rec.shapePattern).attr('x', x0).attr('y', y0).attr('width', w).attr('height', h)
-      .select('image').attr('x', (w - imgW) / 2).attr('y', (h - imgH) / 2).attr('width', imgW).attr('height', imgH);
+    const shapeVsFlag = (w / h) / ratio; // > 1: shape is wider than the flag
+    let tileW = w, tileH = h;
+    if (shapeVsFlag > MAX_STRETCH) tileW = h * ratio * MAX_STRETCH;
+    else if (shapeVsFlag < 1 / MAX_STRETCH) tileH = (w / ratio) * MAX_STRETCH;
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    d3.select(rec.shapePattern)
+      .attr('x', cx - tileW / 2).attr('y', cy - tileH / 2).attr('width', tileW).attr('height', tileH)
+      .select('image').attr('x', 0).attr('y', 0).attr('width', tileW).attr('height', tileH);
+    // marker circles: cover the circle, keep the flag's proportions
     const dotW = ratio >= 1 ? ratio : 1, dotH = ratio >= 1 ? 1 : 1 / ratio;
     d3.select(rec.markerPattern).select('image')
       .attr('x', (1 - dotW) / 2).attr('y', (1 - dotH) / 2).attr('width', dotW).attr('height', dotH);
