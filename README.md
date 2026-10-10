@@ -112,6 +112,7 @@ js/
     lobby.js            Party room: players, settings, start, scores, results
 tools/
   build-stats.mjs       Rebuilds js/data/facts/stats.js from the CIA World Factbook + mledoze/countries
+  facts-map.mjs         Rebuilds tools/factbook-map.json (which Factbook file is which country)
   factbook-map.json     Which Factbook file is which country
 tests/
   data.test.mjs         Data integrity (runs in Node)

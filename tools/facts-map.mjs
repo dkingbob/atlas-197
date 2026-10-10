@@ -1,3 +1,8 @@
+/**
+ * Finds which CIA World Factbook file describes each of our countries and
+ * writes tools/factbook-map.json (used by build-stats.mjs).
+ *   node tools/facts-map.mjs /tmp/factbook
+ */
 import fs from 'node:fs'; import path from 'node:path';
 import { COUNTRIES } from '../js/data/countries/index.js';
 import { normalize } from '../js/core/utils.js';
