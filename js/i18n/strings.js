@@ -205,6 +205,13 @@ export const STRINGS = {
     ftToReview: "To look at again",
     ftRetryMisses: "Retest my mistakes",
     ftAgain: "Take it again",
+    // time on the site
+    timeTitle: "Time on Atlas",
+    timeSession: "This session",
+    timeToday: "Today",
+    timeTotal: "Total",
+    timeDays: "Days used",
+    timeNote: "Only active time counts: after 5 minutes without moving, clicking or typing, that quiet time is taken out. Updates every 10 seconds.",
     // party (multiplayer)
     party: 'Party', partyTitle: 'Play with friends', partyLead: 'Up to 4 players. Everyone gets the same countries at the same time.',
     nickname: 'Your name', nicknamePh: 'e.g. Sam', createRoom: 'Create a room', joinRoom: 'Join', roomCode: 'Room code', roomCodePh: 'ABCDE',
@@ -419,6 +426,13 @@ export const STRINGS = {
     ftToReview: "À revoir",
     ftRetryMisses: "Refaire mes erreurs",
     ftAgain: "Recommencer le test",
+    // time on the site
+    timeTitle: "Temps sur Atlas",
+    timeSession: "Cette séance",
+    timeToday: "Aujourd’hui",
+    timeTotal: "Total",
+    timeDays: "Jours d’utilisation",
+    timeNote: "Seul le temps actif compte : après 5 minutes sans bouger, cliquer ni écrire, ce temps d’inactivité est retiré. Mise à jour toutes les 10 secondes.",
     // party (multijoueur)
     party: 'Multi', partyTitle: 'Jouer entre amis', partyLead: 'Jusqu’à 4 joueurs. Tout le monde a les mêmes pays en même temps.',
     nickname: 'Votre nom', nicknamePh: 'ex. Sam', createRoom: 'Créer un salon', joinRoom: 'Rejoindre', roomCode: 'Code du salon', roomCodePh: 'ABCDE',

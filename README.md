@@ -15,6 +15,8 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 - **5 difficulty levels** (easy → very hard). Harder countries are worth more points (10 / 15 / 20 / 30 / 50) and every mode can be filtered by level.
 - **Forgiving typing**: English or French, accents optional, typos and spellings that *sound* right are accepted ("Filipines", "Djibuti", "Kazakstan") — but never a different country ("Niger" ≠ Nigeria).
 - **Track progress**: mark countries as known, keep a "hard list" that comes back more often, see your accuracy per subject.
+- **Time on Atlas** (in *Progress*): this session, today, total and days used. Only active time counts — a quiet stretch of 5+ minutes is removed entirely.
+- Explore: click a gray country to see its flag, click it again to put it back to gray.
 - **Game memory**: games start with what you haven't been asked for a while, so they don't repeat. Clear it, or back up / restore all progress as a file, from *Progress*.
 
 No framework, no build step: plain HTML, CSS and JavaScript modules.
@@ -75,6 +77,7 @@ js/
     answers.js          Checks typed answers (aliases, accents, typos, sound-alikes)
     phonetic.js         Sound-alike key for EN/FR spellings
     speech.js           Speak / listen (Web Speech API)
+    activity.js         Active time on the site (idle stretches removed)
     utils.js            Small helpers
   map/
     map-view.js         The map: drawing, zoom, labels, hover, public API
@@ -130,6 +133,7 @@ tests/
   capitals.test.mjs     Capitals button and capital pin
   recap.test.mjs        Study recap: quiz first, slideshow and speed slider
   final-test.test.mjs   Final test after a Study session
+  activity.test.mjs     Active time, click-again-to-gray, smooth wheel zoom
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
 ```

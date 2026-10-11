@@ -105,4 +105,6 @@ export const CountryPanel = {
   close,
   refresh: render,
   isOpen: () => panel().classList.contains('open'),
+  /** The place shown in the panel, or null. */
+  current: () => (panel().classList.contains('open') ? current : null),
 };

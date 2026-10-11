@@ -12,6 +12,7 @@ import { CONFIG } from './config.js';
 import { COUNTRIES, COUNTRY_BY_ID } from './data/countries/index.js';
 import { WATERS } from './data/waters.js';
 import { Store } from './core/store.js';
+import { Activity } from './core/activity.js';
 import { Answers } from './core/answers.js';
 import { $, $$ } from './core/utils.js';
 import { STRINGS } from './i18n/strings.js';
@@ -116,8 +117,14 @@ function setGameMode(on) {
 }
 
 /* ---------- explore mode ---------- */
+/** Gray map: 1st click shows the flag + panel, 2nd click on the same place puts it back to gray. */
 function explorePlace(rec) {
-  if (MapView.getDisplay() === 'gray' && !rec.revealed) MapView.reveal(rec);
+  if (MapView.getDisplay() === 'gray' && rec.revealed) {
+    MapView.unreveal(rec);
+    if (CountryPanel.current() === rec) CountryPanel.close();
+    return;
+  }
+  if (MapView.getDisplay() === 'gray') MapView.reveal(rec);
   CountryPanel.open(rec);
 }
 
@@ -224,6 +231,7 @@ function warnIfOtherAddress() {
 async function boot() {
   applyStaticTexts();
   Store.askPersistent();
+  Activity.start();
   warnIfOtherAddress();
   if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return showLoadError();
 
@@ -267,7 +275,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Activity, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 

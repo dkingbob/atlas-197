@@ -10,10 +10,12 @@ import { $, escapeHtml } from '../core/utils.js';
 import { t, lang, countryName, continentName } from '../i18n/i18n.js';
 import { deckSummary } from '../game/srs.js';
 import { whenText } from '../game/study.js';
+import { Activity, formatDuration } from '../core/activity.js';
 import { ICONS } from './icons.js';
 import { flagImage, Modal, Toast } from './components.js';
 
 const ID = 'progress-modal';
+let timeTimer = 0;
 let onPlayHardList = () => {};
 let onReset = () => {};
 
@@ -32,6 +34,18 @@ function knownSection() {
   const all = progressBar(t('overall'), COUNTRIES.filter(c => known.has(c.id)).length, COUNTRIES.length);
   return `<div class="cont-bars">${rows}<div style="height:4px"></div>${all}</div>`;
 }
+
+/** Time really spent on the site (idle stretches of 5+ minutes are not counted). */
+function timeStats() {
+  const stat = (value, label) => `<div class="stat"><b>${value}</b><span>${label}</span></div>`;
+  return `<div class="stats" id="time-stats">
+    ${stat(formatDuration(Activity.sessionMs(), lang()), t('timeSession'))}
+    ${stat(formatDuration(Activity.todayMs(), lang()), t('timeToday'))}
+    ${stat(formatDuration(Activity.totalMs(), lang()), t('timeTotal'))}
+    ${stat(Activity.daysUsed(), t('timeDays'))}
+  </div>`;
+}
+const timeSection = () => `${timeStats()}<p class="note tight">${t('timeNote')}</p>`;
 
 /** Study mode: how many countries are in long-term memory. */
 function studySection() {
@@ -114,6 +128,7 @@ function render() {
     <div class="dialog">
       <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
       <h2>${t('progTitle')}</h2><p class="lead">${t('progLead')}</p>
+      <div class="d-sec"><h3>${t('timeTitle')}</h3>${timeSection()}</div>
       <div class="d-sec"><h3>${t('knownByCont')}</h3>${knownSection()}</div>
       <div class="d-sec"><h3>${t('studyMemory')}</h3>${studySection()}</div>
       <div class="d-sec"><h3>${t('bySubject')}</h3>${accuracySection()}</div>
@@ -161,6 +176,16 @@ export const ProgressPanel = {
       if (e.target.dataset.actFile === 'restore' && e.target.files[0]) restoreBackup(e.target.files[0]);
     });
   },
-  open() { render(); Modal.open(ID); },
+  open() {
+    render();
+    Modal.open(ID);
+    // keep the time figures current while the dialog is open
+    clearInterval(timeTimer);
+    timeTimer = setInterval(() => {
+      if (!Modal.isOpen(ID)) return clearInterval(timeTimer);
+      const box = $('#time-stats');
+      if (box) box.outerHTML = timeStats();
+    }, 10000);
+  },
   refresh() { if (Modal.isOpen(ID)) render(); },
 };

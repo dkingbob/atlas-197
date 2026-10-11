@@ -363,6 +363,7 @@ test('every country opens a full panel in English and French', async () => {
       setLanguage(lng);
       for (const c of COUNTRIES) {
         const rec = MapView.record(c.id);
+        if (rec.revealed) MapView.unreveal(rec); // a 2nd click would put it back to gray
         (rec.pathEl || rec.markerEl).dispatchEvent(new MouseEvent('click', { bubbles: true }));
         const name = document.querySelector('#panel .p-name')?.textContent;
         const history = document.querySelector('#panel .p-sec p')?.textContent || '';

@@ -10,6 +10,8 @@
  * Smooth zooming: while the user pans/zooms, #map-layer is moved with a CSS
  * transform (GPU, nothing is redrawn). When the gesture settles we "commit":
  * the real transform is applied to the SVG, which redraws crisp at the new scale.
+ * During animated zooms, the mid-way redraws are "light" (no label work), the
+ * mouse wheel glides instead of jumping, and long flights take a little longer.
  */
 import { CONFIG } from '../config.js';
 import { COUNTRY_BY_ID } from '../data/countries/index.js';
@@ -24,8 +26,11 @@ import { createHighlightLayer } from './highlight-layer.js';
 
 const COMMIT_DELAY_MS = 60;          // wait this long after the last zoom event before redrawing
 const MAX_PREVIEW_SCALE = 3;         // beyond this the stretched preview gets blurry → redraw
-const MIN_PREVIEW_SCALE = 0.5;
+const MIN_PREVIEW_SCALE = 0.4;
 const MAX_PREVIEW_SHIFT = 0.5;       // fraction of the screen before undrawn edges show → redraw
+const WHEEL_STEP = 0.0022;           // zoom per wheel "pixel"
+const WHEEL_GLIDE = 0.22;            // share of the remaining distance covered each frame (smooth wheel)
+const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LABEL_FONT_PX = 11.5;
 const CAPITAL_FONT_PX = 10.5;
 const CAPITAL_DOT_PX = 3.2;
@@ -48,6 +53,8 @@ let center = CONFIG.DEFAULT_CENTER;
 let transform = d3.zoomIdentity;      // follows the gesture live
 let committed = d3.zoomIdentity;      // what the SVG content is actually drawn with
 let commitTimer = 0, labelFrame = 0;
+let animating = 0;                    // number of running programmatic zoom animations
+let wheelTarget = null, wheelFrame = 0;
 let display = 'gray';                 // 'gray' | 'flag'
 let nameMode = 'all';                 // 'all' | 'revealed' | 'none'
 let showWaterLabels = true;
@@ -100,7 +107,10 @@ function init(topology) {
   zoom = d3.zoom().scaleExtent([1, CONFIG.MAX_ZOOM])
     .on('zoom', event => { transform = event.transform; preview(); })
     .on('end', () => { clearTimeout(commitTimer); commitTimer = setTimeout(commit, COMMIT_DELAY_MS); });
+  // the wheel is handled by smoothWheel() (gliding) instead of d3's jumpy steps
+  zoom.filter(event => event.type !== 'wheel' && !event.ctrlKey && !event.button);
   d3.select(wrap).call(zoom).on('dblclick.zoom', null);
+  wrap.addEventListener('wheel', smoothWheel, { passive: false });
 
   render();
   window.addEventListener('resize', debounce(render, 180));
@@ -227,18 +237,63 @@ function preview() {
   const dy = transform.y - r * committed.y;
   const tooFar = r > MAX_PREVIEW_SCALE || r < MIN_PREVIEW_SCALE
     || Math.abs(dx) > width * MAX_PREVIEW_SHIFT || Math.abs(dy) > height * MAX_PREVIEW_SHIFT;
-  if (tooFar) return commit();
-  layer.style.transform = `translate(${dx}px,${dy}px) scale(${r})`;
+  if (tooFar) return commit({ light: animating > 0 || Boolean(wheelFrame) });
+  layer.style.transform = `translate3d(${dx}px,${dy}px,0) scale(${r})`;
 }
 
-function commit() {
+/**
+ * Redraw the SVG at the current transform. `light` = in the middle of an
+ * animation: only move the drawing, the labels are sorted out at the end.
+ */
+function commit({ light = false } = {}) {
   clearTimeout(commitTimer);
   committed = transform;
   root.attr('transform', transform);
   layer.style.transform = '';
   highlight.setTransform(transform);
+  if (light) {
+    gLabels.attr('font-size', LABEL_FONT_PX / transform.k).attr('stroke-width', 3 / transform.k);
+    return;
+  }
   updateForScale();
 }
+
+/** Mouse wheel / trackpad: glide towards the new zoom instead of jumping. */
+function smoothWheel(e) {
+  e.preventDefault();
+  const [px, py] = d3.pointer(e, wrap);
+  const delta = -e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode ? 500 : 1) * (e.ctrlKey ? 4 : 1);
+  const from = wheelTarget || transform;
+  const k = clamp(from.k * Math.pow(2, delta * WHEEL_STEP), 1, CONFIG.MAX_ZOOM);
+  const scale = k / from.k;
+  wheelTarget = keepInBounds(d3.zoomIdentity.translate(px - (px - from.x) * scale, py - (py - from.y) * scale).scale(k));
+  d3.select(wrap).interrupt(); // stop a running animation
+  if (REDUCED_MOTION) { applyStep(wheelTarget); wheelTarget = null; return; }
+  if (!wheelFrame) wheelFrame = requestAnimationFrame(glide);
+}
+
+function glide() {
+  const t0 = transform, t1 = wheelTarget;
+  const close = Math.abs(t1.k - t0.k) / t1.k < 0.004 && Math.abs(t1.x - t0.x) < 1 && Math.abs(t1.y - t0.y) < 1;
+  const next = close ? t1 : d3.zoomIdentity
+    .translate(t0.x + (t1.x - t0.x) * WHEEL_GLIDE, t0.y + (t1.y - t0.y) * WHEEL_GLIDE)
+    .scale(Math.exp(Math.log(t0.k) + (Math.log(t1.k) - Math.log(t0.k)) * WHEEL_GLIDE));
+  applyStep(next);
+  if (close) {
+    wheelFrame = 0;
+    wheelTarget = null;
+    clearTimeout(commitTimer);
+    commitTimer = setTimeout(commit, COMMIT_DELAY_MS);
+  } else wheelFrame = requestAnimationFrame(glide);
+}
+
+/** Same limits as dragging: the map can't be pushed off screen. */
+function keepInBounds(t) {
+  return zoom.constrain()(t, zoom.extent().call(wrap), zoom.translateExtent());
+}
+
+/** Set the zoom without an animation (d3 keeps it within the allowed bounds). */
+function applyStep(target) { d3.select(wrap).call(zoom.transform, target); }
 
 /** Sizes that must stay constant on screen (labels, markers, shadow) + what to show at this zoom. */
 function updateForScale() {
@@ -457,10 +512,22 @@ function zoomToBox([[x0, y0], [x1, y1]], { maxK = 12, minK = 1, pad = 0.86, minS
   applyTransform(d3.zoomIdentity.translate(view.x + view.w / 2 - k * cx, view.y + view.h / 2 - k * cy).scale(k), duration);
 }
 
+/**
+ * Animate to `target`. Long flights (big zoom change or far away) get a bit
+ * more time so they never feel rushed; reduced-motion users jump straight there.
+ */
 function applyTransform(target, duration) {
   const host = d3.select(wrap);
-  if (duration) host.transition().duration(duration).call(zoom.transform, target);
-  else { host.call(zoom.transform, target); commit(); }
+  if (wheelFrame) { cancelAnimationFrame(wheelFrame); wheelFrame = 0; wheelTarget = null; }
+  if (!duration || REDUCED_MOTION) { host.interrupt(); host.call(zoom.transform, target); commit(); return; }
+  const a = [(width / 2 - transform.x) / transform.k, (height / 2 - transform.y) / transform.k, width / transform.k];
+  const b = [(width / 2 - target.x) / target.k, (height / 2 - target.y) / target.k, width / target.k];
+  const flight = d3.interpolateZoom(a, b).duration; // d3's estimate of how "far" this is
+  const ms = clamp(Math.max(duration, flight * 0.6), duration, duration * 1.8);
+  animating++;
+  host.transition('fly').duration(ms).ease(d3.easeCubicInOut)
+    .call(zoom.transform, target)
+    .on('end interrupt', () => { animating = Math.max(0, animating - 1); clearTimeout(commitTimer); commitTimer = setTimeout(commit, COMMIT_DELAY_MS); });
 }
 
 /** Screen box of a lon/lat rectangle (sampled along its edges). */
@@ -606,7 +673,13 @@ export const MapView = {
   },
   zoomToGeo(lonLatBox, opts) { zoomToBox(geoBox(lonLatBox), { maxK: 8, pad: 0.94, ...opts }); },
   resetView(duration = 750) { applyTransform(d3.zoomIdentity, duration); },
-  zoomBy(factor) { d3.select(wrap).transition().duration(300).call(zoom.scaleBy, factor); },
+  zoomBy(factor) {
+    const k = clamp(transform.k * factor, 1, CONFIG.MAX_ZOOM) / transform.k;
+    const [cx, cy] = [width / 2, (insets.top + height - insets.bottom) / 2];
+    applyTransform(d3.zoomIdentity.translate(cx - (cx - transform.x) * k, cy - (cy - transform.y) * k).scale(transform.k * k), 380);
+  },
+  /** Unreveal a country revealed in explore mode (back to gray). */
+  unreveal(rec) { rec.revealed = false; flags.apply(rec, false); updateLabels(); },
   getTransform: () => transform,
   /** [lon, lat] → screen pixel at the current zoom. */
   toScreen(lonLat) { const p = projection(lonLat); return p ? transform.apply(p) : null; },

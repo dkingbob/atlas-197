@@ -16,6 +16,7 @@
  *   hard     { [countryId]: weight 1..9 }     "I can't remember" list (higher = asked more)
  *   stats    { [countryId]: { name|capital|location: { seen, ok, ko } } }
  *   srs      { [countryId]: { box 1..7, due: timestamp, lapses, last } }   Study mode (see game/srs.js)
+ *   time     { total: ms, days: { 'YYYY-MM-DD': ms } }   active time on the site (see core/activity.js)
  *   asked    { [itemKey]: { t: last asked timestamp, n: times asked } }    game memory: games
  *            prefer what you have not seen for a while, so they do not repeat
  */
@@ -44,6 +45,7 @@ function defaultState() {
     stats: {},
     srs: {},
     asked: {},
+    time: { total: 0, days: {} },
   };
 }
 
@@ -110,6 +112,14 @@ export const Store = {
   },
   allStats: () => state.stats,
 
+  /* Active time on the site */
+  addActiveTime(ms, day) {
+    state.time.total += ms;
+    state.time.days[day] = (state.time.days[day] || 0) + ms;
+    save();
+  },
+  activeTime: () => state.time,
+
   /* Game memory (what was asked, when) */
   markAsked(key) {
     const entry = state.asked[key] || (state.asked[key] = { t: 0, n: 0 });
@@ -142,7 +152,7 @@ export const Store = {
 
   /** Erase progress but keep language and display preferences. */
   reset() {
-    const keep = { lang: state.lang, prefs: state.prefs };
+    const keep = { lang: state.lang, prefs: state.prefs, time: state.time }; // time on the site is not "progress"
     state = { ...defaultState(), ...keep };
     save();
   },
