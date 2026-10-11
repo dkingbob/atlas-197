@@ -54,7 +54,7 @@ function render() {
   $('.rc-count', card()).textContent = `${show.index + 1} / ${show.ids.length}`;
   $('.rc-progress i', card()).style.width = `${((show.index + 1) / show.ids.length) * 100}%`;
   $('[data-act="toggle"]', card()).innerHTML = show.playing ? ICONS.pause : ICONS.play;
-  $('[data-act="toggle"]', card()).setAttribute('aria-label', t(show.playing ? 'pause' : 'play'));
+  $('[data-act="toggle"]', card()).setAttribute('aria-label', t(show.playing ? 'rcPause' : 'rcPlay'));
   $('[data-act="voice"]', card())?.classList.toggle('on', voiceOn());
   restartTimeBar();
 }
@@ -132,7 +132,7 @@ function build() {
     <div class="rc-slide"></div>
     <div class="rc-time"><i></i></div>
     <div class="rc-controls">
-      <button class="rc-btn" data-act="prev" aria-label="${t('previous')}">${ICONS.prev}</button>
+      <button class="rc-btn" data-act="prev" aria-label="${t('rcPrevious')}">${ICONS.prev}</button>
       <button class="rc-btn big" data-act="toggle"></button>
       <button class="rc-btn" data-act="next" aria-label="${t('next')}">${ICONS.next}</button>
       ${Speech.canSpeak() ? `<button class="rc-btn" data-act="voice" title="${t('recapVoice')}" aria-label="${t('recapVoice')}">${ICONS.speaker}</button>` : ''}
