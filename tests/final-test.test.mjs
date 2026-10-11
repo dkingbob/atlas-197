@@ -76,6 +76,25 @@ test('right answers go on; wrong ones show the answer, the wrong place in red, t
   assert.equal(await peek(), null);
 });
 
+test('Name / Place switches: only the chosen step is asked', async () => {
+  await page.evaluate(() => FinalTest.start({ ids: ['FR', 'DE'], askName: true, askPlace: true }));
+  await page.click('#ft-card [data-act="sw-name"]');           // name off → place only
+  assert.equal((await peek()).step, 'place');
+  await page.click('#ft-card [data-act="sw-place"]');          // can't turn both off → name back on
+  assert.ok(await page.$eval('#ft-card [data-act="sw-name"]', b => b.classList.contains('on')));
+  for (let i = 0; i < 2; i++) {
+    const p = await peek();
+    assert.equal(p.step, 'name');
+    await page.fill('#ft-card input', await name(p.id));
+    const t0 = Date.now();
+    await page.press('#ft-card input', 'Enter');
+    await page.waitForFunction(i => { const x = FinalTest.peek(); return !x || x.index > i; }, p.index);
+    assert.ok(Date.now() - t0 < 700, 'right answer → next almost at once');
+  }
+  await page.waitForSelector('#ft-end-modal.open');
+  await page.click('#ft-end-modal [data-act="back"]');
+});
+
 test('no console errors', () => {
   assert.deepEqual(errors, []);
 });

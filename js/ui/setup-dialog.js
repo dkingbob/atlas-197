@@ -309,7 +309,13 @@ function onChange(e) {
     updatePoolLine();
   }
   if (input.dataset.studyOption) {
-    settings.study[input.dataset.studyOption] = input.checked;
+    const key = input.dataset.studyOption;
+    settings.study[key] = input.checked;
+    // name / place: at least one stays on
+    if ((key === 'askName' || key === 'askPlace') && !input.checked) {
+      const other = key === 'askName' ? 'askPlace' : 'askName';
+      if (settings.study[other] === false) { settings.study[other] = true; render(); }
+    }
     updatePoolLine();
   }
   if (input.dataset.option) {

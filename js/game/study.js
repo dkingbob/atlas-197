@@ -19,7 +19,8 @@
  * Niger — here is Niger's flag" side-by-side comparisons (discrimination),
  * neighbours and a fact for each country (elaboration).
  *
- * Settings: { conts: [continent ids], levels: [1..5], newCount, capitals: boolean }
+ * Settings: { conts: [continent ids], levels: [1..5], newCount, capitals: boolean,
+ *             askName / askPlace: which recall steps to do (at least one) }
  */
 import { CONTINENT_IDS, CONTINENTS, CONFIG } from '../config.js';
 import { COUNTRIES, COUNTRY_BY_ID } from '../data/countries/index.js';
@@ -36,12 +37,13 @@ import { Recap } from './recap.js';
 import { FinalTest } from './final-test.js';
 
 export const STUDY_NEW_COUNTS = [3, 5, 10, 15, 20];
-export const DEFAULT_STUDY_SETTINGS = { conts: CONTINENT_IDS.slice(), levels: [1, 2], newCount: 5, capitals: false, recap: 'none' };
+export const DEFAULT_STUDY_SETTINGS = { conts: CONTINENT_IDS.slice(), levels: [1, 2], newCount: 5, capitals: false, recap: 'none', askName: true, askPlace: true };
 /** Before the new countries: nothing, a quiz on everything seen, or a slideshow of everything seen. */
 export const RECAP_CHOICES = ['none', 'quiz', 'slideshow'];
 
 const WORKING_SET = 4;
-const OK_PAUSE_MS = 700;
+const OK_TYPED_MS = 150;   // right typed answer: go on almost at once
+const OK_PLACE_MS = 450;   // right click: a short green flash on the map
 const END_ID = 'study-end-modal';
 
 const card = () => $('#study-card');
@@ -159,7 +161,11 @@ const country = () => (run?.current ? COUNTRY_BY_ID.get(run.current.id) : null);
 const record = () => (run?.current ? MapView.record(run.current.id) : null);
 
 /** Recall steps for one round, in order. */
-const recallPhases = () => ['name', 'place', ...(run.settings.capitals ? ['capital'] : [])];
+const recallPhases = () => {
+  const { askName = true, askPlace = true, capitals } = run.settings;
+  const list = [...(askName || !askPlace ? ['name'] : []), ...(askPlace ? ['place'] : []), ...(capitals ? ['capital'] : [])];
+  return list;
+};
 
 function next() {
   if (!run || run.over) return;
@@ -387,8 +393,9 @@ function accepted() {
   run.confusion = null;
   render();
   setFeedback(run.phase.startsWith('fix-') ? t('studyLocked') : t('studyRight'), 'ok');
-  if (base === 'place' || run.phase === 'fix-place') MapView.flash(record(), true, OK_PAUSE_MS);
-  setTimeout(() => { if (run && !run.over) phaseDone(); }, OK_PAUSE_MS);
+  const placed = base === 'place';
+  if (placed) MapView.flash(record(), true, OK_PLACE_MS);
+  setTimeout(() => { if (run && !run.over) phaseDone(); }, placed ? OK_PLACE_MS : OK_TYPED_MS);
 }
 
 function reveal() {
@@ -468,7 +475,7 @@ function onEndClick(e) {
   Modal.close(END_ID);
   stop();
   if (action === 'more' && settings) start(settings);
-  if (action === 'final' && sessionIds.length) FinalTest.start({ ids: sessionIds, capitals: settings.capitals });
+  if (action === 'final' && sessionIds.length) FinalTest.start({ ids: sessionIds, capitals: settings.capitals, askName: settings.askName !== false, askPlace: settings.askPlace !== false });
 }
 
 /* =====================================================================

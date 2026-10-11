@@ -51,13 +51,14 @@ test('slideshow: shows every seen country on the map, then the new ones', async 
   await page.keyboard.press('ArrowRight');
   assert.equal((await page.evaluate(() => Recap.peek())).speed, 1.5);
 
-  // auto-advance at 2× (1.75 s per country)
+  // auto-advance at 4× (0.875 s per country)
   await page.keyboard.press('End');
   await page.click('#recap-card [data-act="toggle"]'); // play again
   const start = Date.now();
   await page.waitForFunction(() => Recap.peek()?.index === 1, null, { timeout: 4000 });
   const elapsed = Date.now() - start;
-  assert.ok(elapsed > 1200 && elapsed < 3000, `~1.75 s per country at 2× (${elapsed} ms)`);
+  assert.equal((await page.evaluate(() => Recap.peek())).speed, 4);
+  assert.ok(elapsed > 500 && elapsed < 1800, `~0.9 s per country at 4× (${elapsed} ms)`);
 
   // skip to learning
   await page.click('#recap-card [data-act="skip"]');

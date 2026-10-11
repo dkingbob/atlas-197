@@ -289,3 +289,6 @@ body.in-final #hud{display:none}
 .ft-result.ok{color:var(--ok)}
 .ft-result.bad{color:var(--bad)}
 @media (max-width:720px){ .ft-flag img{width:96px;height:64px} #ft-card{bottom:8px;padding:12px 14px} }
+.ft-switches{margin-left:auto;display:flex;gap:4px}
+.ft-sw{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;background:#eef2f6;color:var(--muted);text-decoration:line-through}
+.ft-sw.on{background:var(--ink);color:#fff;text-decoration:none}

@@ -20,6 +20,10 @@ export function renderStudySettings(s) {
       <button class="chip ${s.newCount === n ? 'active' : ''}" data-study="newCount" data-val="${n}">${n}</button>`).join('')}</div>
       <label class="switch"><input type="checkbox" data-study-option="capitals" ${s.capitals ? 'checked' : ''}>${t('studyCapitals')}</label>
     </div>
+    <div class="d-sec"><h3>${t('studyRecallSteps')}</h3>
+      <label class="switch"><input type="checkbox" data-study-option="askName" ${s.askName !== false ? 'checked' : ''}>${t('studyAskName')}</label>
+      <label class="switch"><input type="checkbox" data-study-option="askPlace" ${s.askPlace !== false ? 'checked' : ''}>${t('studyAskPlace')}</label>
+    </div>
     ${recapSection(s)}
     ${renderLevelChips(s.levels, false, 'data-study-level')}
     <div class="d-sec"><h3>${t('fContinents')}</h3><div class="chips">${CONTINENT_IDS.map(id => `

@@ -212,6 +212,12 @@ export const STRINGS = {
     timeTotal: "Total",
     timeDays: "Days used",
     timeNote: "Only active time counts: after 5 minutes without moving, clicking or typing, that quiet time is taken out. Updates every 10 seconds.",
+    // name / place switches
+    studyRecallSteps: "From memory, ask me to",
+    studyAskName: "Write the name (from the flag)",
+    studyAskPlace: "Place it on the map",
+    ftAskName: "Name",
+    ftAskPlace: "Place",
     // party (multiplayer)
     party: 'Party', partyTitle: 'Play with friends', partyLead: 'Up to 4 players. Everyone gets the same countries at the same time.',
     nickname: 'Your name', nicknamePh: 'e.g. Sam', createRoom: 'Create a room', joinRoom: 'Join', roomCode: 'Room code', roomCodePh: 'ABCDE',
@@ -433,6 +439,12 @@ export const STRINGS = {
     timeTotal: "Total",
     timeDays: "Jours d’utilisation",
     timeNote: "Seul le temps actif compte : après 5 minutes sans bouger, cliquer ni écrire, ce temps d’inactivité est retiré. Mise à jour toutes les 10 secondes.",
+    // name / place switches
+    studyRecallSteps: "De mémoire, me demander de",
+    studyAskName: "Écrire le nom (à partir du drapeau)",
+    studyAskPlace: "Le placer sur la carte",
+    ftAskName: "Nom",
+    ftAskPlace: "Position",
     // party (multijoueur)
     party: 'Multi', partyTitle: 'Jouer entre amis', partyLead: 'Jusqu’à 4 joueurs. Tout le monde a les mêmes pays en même temps.',
     nickname: 'Votre nom', nicknamePh: 'ex. Sam', createRoom: 'Créer un salon', joinRoom: 'Rejoindre', roomCode: 'Code du salon', roomCodePh: 'ABCDE',

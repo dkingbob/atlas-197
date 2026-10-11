@@ -3,7 +3,7 @@
  * one after the other: the map flies to it, paints its flag, and the card
  * shows (and can say aloud) its name and capital.
  *
- * Speed: 0.75× / 1× / 1.5× / 2×, where 1× = 3.5 s per country.
+ * Speed: 0.75× / 1× / 1.5× / 2× / 3× / 4×, where 1× = 3.5 s per country.
  * Controls: previous, play/pause, next, voice on/off, "start learning".
  *
  *   Recap.play(ids, { onDone, onQuit })
@@ -18,7 +18,7 @@ import { ICONS } from '../ui/icons.js';
 import { flagImage } from '../ui/components.js';
 import { createSpeedSlider } from '../ui/speed-slider.js';
 
-export const RECAP_SPEEDS = [0.75, 1, 1.5, 2];
+export const RECAP_SPEEDS = [0.75, 1, 1.5, 2, 3, 4];
 const BASE_MS = 3500;
 
 const card = () => $('#recap-card');

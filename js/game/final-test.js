@@ -23,7 +23,7 @@ import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
 import { flagImage, Modal, Toast } from '../ui/components.js';
 
-const RIGHT_PAUSE_MS = 800;
+const RIGHT_PAUSE_MS = 120; // right answer: next one almost at once
 const WRONG_PAUSE_MS = 3200;
 const END_ID = 'ft-end-modal';
 
@@ -34,18 +34,20 @@ let test = null;
 let onModeChange = () => {};
 let timer = 0;
 
-const steps = () => ['name', 'place', ...(test.capitals ? ['capital'] : [])];
+/** Steps for each country; the Name / Place switches on the card turn the first two on or off. */
+const steps = () => [...(test.askName ? ['name'] : []), ...(test.askPlace ? ['place'] : []), ...(test.capitals ? ['capital'] : [])];
 const current = () => COUNTRY_BY_ID.get(test.ids[test.index]);
 const record = () => MapView.record(test.ids[test.index]);
 
 /* =====================================================================
    START / STOP
    ===================================================================== */
-function start({ ids, capitals = false }) {
+function start({ ids, capitals = false, askName = true, askPlace = true }) {
   stop({ silent: true });
   if (!ids?.length) return;
+  if (!askName && !askPlace) askName = true;
   test = {
-    ids: shuffle(ids), capitals, index: 0, step: 'name',
+    ids: shuffle(ids), capitals, askName, askPlace, index: 0, step: askName ? 'name' : 'place',
     result: null,          // null while answering, then { ok, text, wrongId }
     score: { name: 0, place: 0, capital: 0 },
     misses: new Map(),     // id → set of steps missed
@@ -106,7 +108,7 @@ function advance() {
   if (i < list.length - 1) test.step = list[i + 1];
   else {
     test.index++;
-    test.step = 'name';
+    test.step = steps()[0];
     if (test.index >= test.ids.length) return finish();
   }
   ask();
@@ -172,7 +174,11 @@ function render() {
   const typed = test.step !== 'place';
   card().innerHTML = `
     <div class="ft-top"><span class="s-tag">${t('ftTag')}</span>
-      <span class="ft-step">${t('ftStep_' + test.step)}</span></div>
+      <span class="ft-step">${t('ftStep_' + test.step)}</span>
+      <span class="ft-switches">
+        <button class="ft-sw ${test.askName ? 'on' : ''}" data-act="sw-name" aria-pressed="${test.askName}">${t('ftAskName')}</button>
+        <button class="ft-sw ${test.askPlace ? 'on' : ''}" data-act="sw-place" aria-pressed="${test.askPlace}">${t('ftAskPlace')}</button>
+      </span></div>
     <h2 class="q-prompt">${prompt}</h2>
     ${showFlag ? `<div class="ft-flag ${r ? (r.ok ? 'ok' : 'bad') : ''}">${flagImage(c.id)}
       ${r ? `<div><b>${escapeHtml(countryName(c))}</b><small>${escapeHtml(capitalName(c))}</small></div>` : ''}</div>` : ''}
@@ -233,14 +239,23 @@ function finish() {
   Modal.open(END_ID);
 }
 
+/** Turn "write the name" / "place it" on or off (at least one stays on). */
+function toggleStep(key) {
+  const other = key === 'askName' ? 'askPlace' : 'askName';
+  test[key] = !test[key];
+  if (!test[key] && !test[other]) test[other] = true;
+  if (!test.result && !steps().includes(test.step)) { clearMap(); test.step = steps()[0]; return ask(); }
+  render();
+}
+
 function onEndClick(e) {
   const action = e.target.closest('[data-act]')?.dataset.act;
   if (!action || !test) return;
-  const { ids, capitals, misses } = test;
+  const { ids, capitals, misses, askName, askPlace } = test;
   Modal.close(END_ID);
   stop();
-  if (action === 'again') start({ ids, capitals });
-  if (action === 'misses') start({ ids: [...misses.keys()], capitals });
+  if (action === 'again') start({ ids, capitals, askName, askPlace });
+  if (action === 'misses') start({ ids: [...misses.keys()], capitals, askName, askPlace });
 }
 
 /* =====================================================================
@@ -253,6 +268,7 @@ export const FinalTest = {
     card().addEventListener('click', e => {
       const action = e.target.closest('[data-act]')?.dataset.act;
       if (action === 'next' && test?.result) advance();
+      if ((action === 'sw-name' || action === 'sw-place') && test) toggleStep(action === 'sw-name' ? 'askName' : 'askPlace');
       if (action === 'dunno' && test && !test.result) {
         const c = current();
         answer(false, t('ftItWas', { answer: test.step === 'capital' ? capitalName(c) : countryName(c) }));
