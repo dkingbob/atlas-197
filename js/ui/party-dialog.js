@@ -15,7 +15,7 @@ import { Lobby, cleanName, cleanRoomCode, isRoomCode } from '../net/lobby.js';
 import { Rush, DEFAULT_RUSH_SETTINGS, rushPoolSize } from '../game/rush.js';
 import { renderRushSettings, applyRushClick, rushSummary } from './rush-settings.js';
 import { ICONS } from './icons.js';
-import { Modal, Toast } from './components.js';
+import { Modal, Toast, redrawDialog } from './components.js';
 
 const ID = 'party-modal';
 const ERROR_KEYS = { 'not-found': 'roomNotFound', timeout: 'roomNotFound', roomFull: 'roomFull', roomPlaying: 'roomPlaying', hostLeft: 'hostLeft' };
@@ -36,6 +36,7 @@ function open({ code = '' } = {}) {
   if (Rush.isRunning()) return Toast.show(t('gameRunning'));
   if (code) codeInput = cleanRoomCode(code);
   if (!lobby) screen = 'entry';
+  modal().innerHTML = ''; // opens fresh, at the top
   render();
   Modal.open(ID);
 }
@@ -47,8 +48,8 @@ function render() {
   const body = {
     entry: entryScreen, connecting: connectingScreen, lobby: lobbyScreen, results: resultsScreen,
   }[screen]();
-  modal().innerHTML = `<div class="dialog party">
-    <button class="d-close" data-act="hide" aria-label="${t('close')}">${ICONS.close}</button>${body}</div>`;
+  redrawDialog(modal(), `<div class="dialog party">
+    <button class="d-close" data-act="hide" aria-label="${t('close')}">${ICONS.close}</button>${body}</div>`, screen);
 }
 
 function entryScreen() {

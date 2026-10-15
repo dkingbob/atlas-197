@@ -12,7 +12,7 @@ import { deckSummary } from '../game/srs.js';
 import { whenText } from '../game/study.js';
 import { Activity, formatDuration } from '../core/activity.js';
 import { ICONS } from './icons.js';
-import { flagImage, Modal, Toast } from './components.js';
+import { flagImage, redrawDialog, Modal, Toast } from './components.js';
 
 const ID = 'progress-modal';
 let timeTimer = 0;
@@ -46,6 +46,15 @@ function timeStats() {
   </div>`;
 }
 const timeSection = () => `${timeStats()}<p class="note tight">${t('timeNote')}</p>`;
+
+/** Best score of each game played (newest first). */
+function bestSection() {
+  const list = Object.values(Store.bestScores()).sort((a, b) => b.at - a.at);
+  if (!list.length) return `<p class="empty">${t('bestNone')}</p>`;
+  const date = at => new Date(at).toLocaleDateString(lang() === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short' });
+  return `<ul class="best-list">${list.map(b => `
+    <li><span>${escapeHtml(b.label)}</span><small>${date(b.at)}</small><b>★ ${b.score}</b></li>`).join('')}</ul>`;
+}
 
 /** Study mode: how many countries are in long-term memory. */
 function studySection() {
@@ -124,11 +133,12 @@ async function restoreBackup(file) {
 function render() {
   const hard = Store.hardIds().map(id => COUNTRY_BY_ID.get(id)).filter(Boolean)
     .sort((a, b) => countryName(a).localeCompare(countryName(b), lang()));
-  $('#' + ID).innerHTML = `
+  redrawDialog($('#' + ID), `
     <div class="dialog">
       <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
       <h2>${t('progTitle')}</h2><p class="lead">${t('progLead')}</p>
       <div class="d-sec"><h3>${t('timeTitle')}</h3>${timeSection()}</div>
+      <div class="d-sec"><h3>${t('bestTitle')}</h3>${bestSection()}</div>
       <div class="d-sec"><h3>${t('knownByCont')}</h3>${knownSection()}</div>
       <div class="d-sec"><h3>${t('studyMemory')}</h3>${studySection()}</div>
       <div class="d-sec"><h3>${t('bySubject')}</h3>${accuracySection()}</div>
@@ -138,7 +148,7 @@ function render() {
         ${hard.length ? `<button class="btn btn-accent" data-act="playhard">${ICONS.repeat}${t('playHard')}</button>` : ''}
         <button class="btn btn-soft" data-act="reset">${ICONS.trash}${t('reset')}</button>
       </div>
-    </div>`;
+    </div>`, 'progress');
 }
 
 function onClick(e) {
@@ -177,6 +187,7 @@ export const ProgressPanel = {
     });
   },
   open() {
+    $('#' + ID).innerHTML = ''; // opens fresh, at the top
     render();
     Modal.open(ID);
     // keep the time figures current while the dialog is open

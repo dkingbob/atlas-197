@@ -292,3 +292,17 @@ body.in-final #hud{display:none}
 .ft-switches{margin-left:auto;display:flex;gap:4px}
 .ft-sw{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;background:#eef2f6;color:var(--muted);text-decoration:line-through}
 .ft-sw.on{background:var(--ink);color:#fff;text-decoration:none}
+
+/* Replay / leave (every game except party rounds) */
+#game-controls{position:fixed;z-index:31;left:12px;top:calc(var(--top) + 8px);display:none;gap:2px;padding:4px;border-radius:999px}
+#game-controls.show{display:flex;animation:fadein .25s ease-out}
+#game-controls button{display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-weight:800;font-size:13.5px;color:var(--ink-2)}
+#game-controls button:hover{background:rgba(19,35,58,.07)}
+#game-controls button[data-act="leave"]:hover{color:var(--bad)}
+#game-controls .ico{width:17px;height:17px}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}}
+@media (max-width:720px){
+  #game-controls{left:8px;top:calc(var(--top) + 62px);flex-direction:column}
+  #game-controls .lbl-t{display:none}
+  #game-controls button{padding:9px}
+}

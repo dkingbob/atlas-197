@@ -279,6 +279,14 @@ export const STRINGS = {
     accErr_network: "No connection — check your internet and try again.",
     accErr_not_configured: "Accounts aren't switched on yet.",
     accErr_unknown: "Something went wrong — please try again.",
+    // best scores, replay/leave
+    bestNew: "New record!",
+    bestBefore: "(before: {n})",
+    bestScore: "Your best: {n}",
+    bestTitle: "Best scores",
+    bestNone: "Finish a game to set your first record.",
+    gcReplay: "Replay",
+    gcLeave: "Leave",
     // party (multiplayer)
     party: 'Party', partyTitle: 'Play with friends', partyLead: 'Up to 4 players. Everyone gets the same countries at the same time.',
     nickname: 'Your name', nicknamePh: 'e.g. Sam', createRoom: 'Create a room', joinRoom: 'Join', roomCode: 'Room code', roomCodePh: 'ABCDE',
@@ -567,6 +575,14 @@ export const STRINGS = {
     accErr_network: "Pas de connexion — vérifiez internet et réessayez.",
     accErr_not_configured: "Les comptes ne sont pas encore activés.",
     accErr_unknown: "Un problème est survenu — réessayez.",
+    // best scores, replay/leave
+    bestNew: "Nouveau record !",
+    bestBefore: "(avant : {n})",
+    bestScore: "Votre record : {n}",
+    bestTitle: "Meilleurs scores",
+    bestNone: "Terminez une partie pour établir votre premier record.",
+    gcReplay: "Rejouer",
+    gcLeave: "Quitter",
     // party (multijoueur)
     party: 'Multi', partyTitle: 'Jouer entre amis', partyLead: 'Jusqu’à 4 joueurs. Tout le monde a les mêmes pays en même temps.',
     nickname: 'Votre nom', nicknamePh: 'ex. Sam', createRoom: 'Créer un salon', joinRoom: 'Rejoindre', roomCode: 'Code du salon', roomCodePh: 'ABCDE',

@@ -18,6 +18,7 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 - **Time on Atlas** (in *Progress*): this session, today, total and days used. Only active time counts — a quiet stretch of 5+ minutes is removed entirely.
 - Explore: click a gray country to see its flag, click it again to put it back to gray.
 - **Accounts** (top-right *Account* button): sign up with email + password (8+ characters, a capital letter, a number). Progress is saved online and follows you on every device; signing in on a device that already has progress merges both.
+- **Replay / Leave** buttons during every game, and a **best score** for each game + settings ("New record!" on the end screen, list in *Progress*).
 - **Game memory**: games start with what you haven't been asked for a while, so they don't repeat. Clear it, or back up / restore all progress as a file, from *Progress*.
 
 No framework, no build step: plain HTML, CSS and JavaScript modules.
@@ -137,6 +138,7 @@ tests/
   recap.test.mjs        Study recap: quiz first, slideshow and speed slider
   final-test.test.mjs   Final test after a Study session
   account.test.mjs      Accounts with a fake Supabase (tests/fake-supabase.js)
+  controls.test.mjs     Replay / leave, best scores, small islands, dialog scroll
   activity.test.mjs     Active time, click-again-to-gray, smooth wheel zoom
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests

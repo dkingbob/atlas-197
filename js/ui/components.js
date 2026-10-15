@@ -3,9 +3,36 @@
  */
 import { CONFIG } from '../config.js';
 import { $, escapeHtml } from '../core/utils.js';
+import { Store } from '../core/store.js';
 import { t } from '../i18n/i18n.js';
 
 /** <img> of a flag (whole flag shown, never cropped). */
+/**
+ * End screens: save the score if it is a record for this game + settings,
+ * and show "New record!" or "Best: 120".
+ */
+export function bestScoreHtml(key, label, score) {
+  const { previous, isNew } = Store.recordBest(key, score, label);
+  if (isNew) return `<div class="best-line new"><span class="best-ico">★</span>${t('bestNew')}${previous !== null ? ` <small>${t('bestBefore', { n: previous })}</small>` : ''}</div>`;
+  if (previous === null) return '';
+  return `<div class="best-line"><span class="best-ico">★</span>${t('bestScore', { n: previous })}</div>`;
+}
+
+/**
+ * Replace a dialog's content without jumping: when the same screen is redrawn
+ * (an option changed), keep the scroll position and skip the opening animation.
+ */
+export function redrawDialog(container, html, screen = '') {
+  const previous = container.querySelector('.dialog');
+  const same = previous && previous.dataset.screen === screen;
+  const scrollTop = same ? previous.scrollTop : 0;
+  container.innerHTML = html;
+  const dialog = container.querySelector('.dialog');
+  if (!dialog) return;
+  dialog.dataset.screen = screen;
+  if (same) { dialog.classList.add('still'); dialog.scrollTop = scrollTop; }
+}
+
 export function flagImage(code, className = '', alt = '') {
   if (!code) return '';
   return `<img class="${className}" src="${CONFIG.flagUrl(code)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async">`;

@@ -138,7 +138,9 @@ function splitOverseasParts(feature, parts, add) {
 /** Fill in geometry-derived fields (see the record description at the top). */
 function describe(rec) {
   if (rec.feature) {
-    const main = largestPolygon(rec.feature.geometry);
+    // the "main" piece is the one around the capital/marker when one is set
+    // (Kiribati: its biggest atoll is far east, across the date line, from Tarawa)
+    const main = rec.fixedLonLat ? closestPolygon(rec.feature.geometry, rec.fixedLonLat) : largestPolygon(rec.feature.geometry);
     rec.mainShape = { type: 'Feature', geometry: { type: 'Polygon', coordinates: main } };
     rec.areaKm2 = d3.geoArea(rec.feature) * EARTH_RADIUS_KM ** 2;
     rec.labelLonLat = rec.fixedLonLat || labelPoint(main);
@@ -152,6 +154,16 @@ function describe(rec) {
   rec.revealed = false;
   rec.dimmed = false;
   return rec;
+}
+
+function closestPolygon(geometry, lonLat) {
+  if (geometry.type === 'Polygon') return geometry.coordinates;
+  let best = null, bestDistance = Infinity;
+  for (const polygon of geometry.coordinates) {
+    const d = d3.geoDistance(d3.geoCentroid({ type: 'Polygon', coordinates: polygon }), lonLat);
+    if (d < bestDistance) { bestDistance = d; best = polygon; }
+  }
+  return best;
 }
 
 function largestPolygon(geometry) {

@@ -21,7 +21,7 @@ import { $, escapeHtml, shuffle } from '../core/utils.js';
 import { t, countryName, capitalName, continentName, territoryName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
-import { flagImage, Modal, Toast } from '../ui/components.js';
+import { flagImage, bestScoreHtml, Modal, Toast } from '../ui/components.js';
 import { freshOrder } from './pool.js';
 import { factsFor, answerClue, MASK } from './facts-pool.js';
 import { INFINITE } from './game.js';
@@ -320,6 +320,7 @@ function finish() {
         <div><h2>${t(outOfLives ? 'lost' : 'won')}</h2>
           <p class="lead flush">${t('m_facts')} · ${t(run.settings.difficulty === 'hard' ? 'fxHard' : 'fxNormal')} · ${t(run.settings.guess === 'capital' ? 's_capital' : 's_name')}</p></div>
       </div>
+      ${bestScoreHtml(`facts:${run.settings.difficulty}:${run.settings.guess}:${run.settings.count}`, `${t('m_facts')} · ${t(run.settings.difficulty === 'hard' ? 'fxHard' : 'fxNormal')} · ${t(run.settings.guess === 'capital' ? 's_capital' : 's_name')}`, run.score)}
       <div class="stats">
         <div class="stat"><b>${run.score}</b><span>${t('score')}</span></div>
         <div class="stat"><b>${accuracy}%</b><span>${t('accuracy')}</span></div>

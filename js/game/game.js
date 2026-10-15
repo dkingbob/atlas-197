@@ -16,7 +16,7 @@ import { $, escapeHtml, shuffle } from '../core/utils.js';
 import { t, countryName, capitalName, continentName, waterName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
-import { flagImage, Modal, Toast } from '../ui/components.js';
+import { flagImage, bestScoreHtml, Modal, Toast } from '../ui/components.js';
 import { buildCountryPool, pickWeighted, freshOrder, memoryKey } from './pool.js';
 import { pointsFor } from '../data/difficulty.js';
 import { QuestionRound } from './question-round.js';
@@ -258,6 +258,7 @@ function renderEndScreen() {
         <div class="end-badge ${won ? '' : 'lost'}">${won ? ICONS.trophy : ICONS.sad}</div>
         <div><h2>${won ? t('won') : t('lost')}</h2><p class="lead flush">${escapeHtml(subtitle)}</p></div>
       </div>
+      ${bestScoreHtml(`classic:${config.mode}:${config.subject}:${config.answer}:${config.mode === 'continent' ? config.continent : ''}:${config.count}`, `${t('m_' + config.mode)} · ${t('s_' + config.subject)}${config.mode === 'continent' ? ' · ' + continentName(config.continent) : ''}`, state.score)}
       <div class="stats">
         <div class="stat"><b>${state.score}</b><span>${t('score')}</span></div>
         <div class="stat"><b>${accuracy}%</b><span>${t('accuracy')}</span></div>

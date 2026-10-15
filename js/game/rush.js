@@ -26,7 +26,7 @@ import { freshOrder } from './pool.js';
 import { t, countryName, capitalName, continentName, territoryName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
-import { flagImage, Modal, Toast } from '../ui/components.js';
+import { flagImage, bestScoreHtml, Modal, Toast } from '../ui/components.js';
 
 export const RUSH_MODES = ['flag-map', 'flag-only', 'capital', 'map-hunt', 'survival'];
 export const RUSH_DURATIONS = [60, 90, 120, 180, 300];
@@ -387,6 +387,7 @@ function renderEndScreen(res, reason) {
         <div class="end-badge">${ICONS.trophy}</div>
         <div><h2>${title}</h2><p class="lead flush">${t('rushLead', { n: res.found, p: res.passed })} · ${t('r_' + run.settings.rushMode.replace('-', ''))}</p></div>
       </div>
+      ${bestScoreHtml(`rush:${run.settings.rushMode}:${run.settings.duration}`, `Rush · ${t('r_' + run.settings.rushMode.replace('-', ''))} · ${run.settings.duration}s`, res.score)}
       <div class="stats">
         <div class="stat"><b>${res.score}</b><span>${t('score')}</span></div>
         <div class="stat"><b>${res.found}</b><span>${t('found')}</span></div>

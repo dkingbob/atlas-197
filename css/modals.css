@@ -229,3 +229,13 @@ details.filters[open] summary::after{transform:rotate(-135deg)}
   .account-btn{width:44px;padding:0;justify-content:center}
   .account-btn .lbl-t{display:none}
 }
+.best-line{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 14px;border-radius:14px;background:#f3f6f9;font-weight:800;font-size:14px;color:var(--ink-2)}
+.best-line small{font-weight:700;color:var(--muted)}
+.best-ico{color:var(--accent);font-size:17px}
+.best-line.new{background:var(--accent-soft);color:var(--accent-ink);animation:bestpop .6s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bestpop{from{transform:scale(.85);opacity:0}}
+.best-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:240px;overflow:auto}
+.best-list li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;background:#f3f6f9;font-weight:700;font-size:14px}
+.best-list small{color:var(--muted);font-weight:700}
+.best-list b{color:var(--accent-ink)}
+.dialog.still{animation:none}

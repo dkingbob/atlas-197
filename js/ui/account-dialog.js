@@ -10,7 +10,7 @@ import { $, escapeHtml, shuffle } from '../core/utils.js';
 import { t } from '../i18n/i18n.js';
 import { Account, PASSWORD_RULES, passwordOk } from '../net/account.js';
 import { ICONS } from './icons.js';
-import { flagImage, Modal, Toast } from './components.js';
+import { flagImage, redrawDialog, Modal, Toast } from './components.js';
 
 const ID = 'account-modal';
 const SUCCESS_MS = 2600;
@@ -116,13 +116,13 @@ function sideHtml() {
    ===================================================================== */
 function render() {
   if (screen === 'success') return renderSuccess();
-  modal().innerHTML = `
+  redrawDialog(modal(), `
     <div class="dialog a-dialog">
       <button class="d-close" data-act="close" aria-label="${t('close')}">${ICONS.close}</button>
       <div class="a-main"><div class="a-brand"><span class="globe">${ICONS.globe}</span>Atlas<sup>197</sup></div>
         ${Account.isConfigured() ? formHtml() : `<h2>${t('accSoonTitle')}</h2><p class="lead">${t('accSoonLead')}</p>`}</div>
       <aside class="a-side">${sideHtml()}</aside>
-    </div>`;
+    </div>`, screen);
   // focus the first empty field — but never steal the focus from a field being typed in
   const empty = [...modal().querySelectorAll('form input')].find(i => !i.value);
   if (empty && !busy && !modal().contains(document.activeElement)) empty.focus({ preventScroll: true });
@@ -247,6 +247,7 @@ export const AccountDialog = {
     error = '';
     notice = '';
     busy = false;
+    modal().innerHTML = '';
     render();
     Modal.open(ID);
   },

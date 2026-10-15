@@ -284,6 +284,8 @@ export const FinalTest = {
   start,
   stop,
   isRunning: () => Boolean(test),
+  /** Same countries and switches, for "Replay". */
+  settings: () => (test ? { ids: test.ids.slice(), capitals: test.capitals, askName: test.askName, askPlace: test.askPlace } : null),
   onPlaceClick,
   refresh() { if (test && !test.over) { render(); renderHud(); } },
   peek: () => (test ? { id: test.ids[test.index], step: test.step, index: test.index, total: test.ids.length, result: test.result, score: { ...test.score }, over: test.over } : null),

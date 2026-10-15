@@ -71,6 +71,47 @@ function setLanguage(newLang) {
   Object.values(ENGINES).forEach(engine => engine.refresh());
 }
 
+/* ---------- in-game buttons: replay / leave ---------- */
+let lastConfig = null; // what the last game was started with (for "Replay")
+
+function startGame(config) {
+  lastConfig = structuredClone(config);
+  if (config.mode === 'rush') Rush.start({ settings: config.rush });
+  else if (config.mode === 'study') Study.start(config.study);
+  else if (ENGINES[config.mode]) ENGINES[config.mode].start(config.settings);
+  else Game.start(config);
+}
+
+/** Stop whatever is running (and its end screen) and go back to exploring. */
+function leaveGame() {
+  if (Game.isActive()) Game.quit();
+  if (Rush.isRunning() && !PartyDialog.isInParty()) { Modal.close('rush-end-modal'); Rush.stop(); }
+  if (Study.isRunning()) { Modal.close('study-end-modal'); Study.stop(); }
+  const engine = runningEngine();
+  if (engine) engine.stop();
+  ['end-modal', 'rush-end-modal', 'study-end-modal', 'flags-end-modal', 'facts-end-modal', 'pin-end-modal', 'ft-end-modal',
+    'setup-modal', 'party-modal', 'progress-modal'].forEach(id => Modal.close(id));
+  setGameMode(false);
+}
+
+/** Start the same game again, from the beginning, with the same settings. */
+function replayGame() {
+  if (FinalTest.isRunning()) {
+    const again = FinalTest.settings();
+    leaveGame();
+    return FinalTest.start(again);
+  }
+  if (!lastConfig) return;
+  const config = lastConfig;
+  leaveGame();
+  startGame(config);
+}
+
+function syncGameControls() {
+  const show = inGame && !PartyDialog.isInParty() && (Boolean(lastConfig) || FinalTest.isRunning());
+  $('#game-controls').classList.toggle('show', show);
+}
+
 /* ---------- account ---------- */
 /** Header button: "Account" when signed out, the player's initial + name when signed in. */
 function syncAccountButton() {
@@ -136,6 +177,7 @@ function toggleCapitals() {
 function setGameMode(on) {
   inGame = on;
   MapView.setCapitals(!on && Store.pref('capitals'));
+  syncGameControls();
   document.body.classList.toggle('in-game', on);
   const playing = on ? (PartyDialog.isInParty() ? 'party' : playNav) : 'explore';
   $$('#nav [data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === playing));
@@ -159,17 +201,7 @@ function explorePlace(rec) {
 function bindHeader() {
   $('#nav').addEventListener('click', e => {
     const target = e.target.closest('[data-nav]')?.dataset.nav;
-    if (target === 'explore') {
-      if (Game.isActive()) Game.quit();
-      if (Rush.isRunning() && !PartyDialog.isInParty()) { Modal.close('rush-end-modal'); Rush.stop(); }
-      if (Study.isRunning()) { Modal.close('study-end-modal'); Study.stop(); }
-      const engine = runningEngine();
-      if (engine) { document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open')); engine.stop(); }
-      Modal.close('setup-modal');
-      Modal.close('party-modal');
-      Modal.close('progress-modal');
-      setGameMode(false);
-    }
+    if (target === 'explore') leaveGame();
     if (target === 'play' || target === 'capitals') {
       if (anyGameActive() || PartyDialog.isInParty()) return Toast.show(t('gameRunning'));
       Modal.close('progress-modal');
@@ -198,6 +230,11 @@ function bindHeader() {
   $('#names-btn').addEventListener('click', toggleNames);
   $('#capitals-btn').addEventListener('click', toggleCapitals);
   $('#account-btn').addEventListener('click', () => AccountDialog.open());
+  $('#game-controls').addEventListener('click', e => {
+    const action = e.target.closest('[data-act]')?.dataset.act;
+    if (action === 'replay') replayGame();
+    if (action === 'leave') leaveGame();
+  });
   $('#lang-seg').addEventListener('click', e => {
     const button = e.target.closest('[data-lang]');
     if (button) setLanguage(button.dataset.lang);
@@ -265,12 +302,7 @@ async function boot() {
 
   CountryPanel.init();
   SetupDialog.init({
-    onStart: config => {
-      if (config.mode === 'rush') Rush.start({ settings: config.rush });
-      else if (config.mode === 'study') Study.start(config.study);
-      else if (ENGINES[config.mode]) ENGINES[config.mode].start(config.settings);
-      else Game.start(config);
-    },
+    onStart: startGame,
   });
   PartyDialog.init();
   ProgressPanel.init({

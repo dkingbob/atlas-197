@@ -21,7 +21,7 @@ import { $, escapeHtml } from '../core/utils.js';
 import { t, lang, countryName, capitalName, continentName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
-import { flagImage, Modal, Toast } from '../ui/components.js';
+import { flagImage, bestScoreHtml, Modal, Toast } from '../ui/components.js';
 import { freshOrder } from './pool.js';
 
 export const DEFAULT_FLAG_SETTINGS = { style: 'practice', conts: CONTINENT_IDS.slice(), levels: [1, 2, 3, 4, 5], letters: false, count: 20 };
@@ -336,6 +336,7 @@ function finish() {
         <div class="end-badge ${outOfLives ? 'lost' : ''}">${outOfLives ? ICONS.sad : ICONS.flag}</div>
         <div><h2>${t(outOfLives ? 'lost' : 'fqDone')}</h2><p class="lead flush">${t('m_flags')} · ${t(run.practice ? 'fqPractice' : 'fqGame')}</p></div>
       </div>
+      ${bestScoreHtml(`flags:${run.practice ? 'practice' : 'game:' + run.total}`, `${t('m_flags')} · ${t(run.practice ? 'fqPractice' : 'fqGame')}`, run.score)}
       <div class="stats">
         <div class="stat"><b>${run.score}</b><span>${t('score')}</span></div>
         <div class="stat"><b>${accuracy}%</b><span>${t('accuracy')}</span></div>

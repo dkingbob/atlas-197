@@ -17,7 +17,7 @@ import { $, escapeHtml } from '../core/utils.js';
 import { t, lang, countryName, capitalName } from '../i18n/i18n.js';
 import { MapView } from '../map/map-view.js';
 import { ICONS } from '../ui/icons.js';
-import { flagImage, Modal, Toast } from '../ui/components.js';
+import { flagImage, bestScoreHtml, Modal, Toast } from '../ui/components.js';
 import { freshOrder } from './pool.js';
 import { INFINITE } from './game.js';
 
@@ -198,6 +198,7 @@ function finish() {
         <div class="end-badge">${ICONS.pin}</div>
         <div><h2>${t('won')}</h2><p class="lead flush">${t('m_pin')}</p></div>
       </div>
+      ${bestScoreHtml(`pin:${run.settings.count}`, t('m_pin'), run.score)}
       <div class="stats">
         <div class="stat"><b>${run.score}</b><span>${t('score')}</span></div>
         <div class="stat"><b>${formatKm(avg)} km</b><span>${t('pinAverage')}</span></div>

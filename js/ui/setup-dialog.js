@@ -77,6 +77,7 @@ function open({ hub: newHub = null, ...overrides } = {}) {
     settings.forms.facts.guess = 'capital';
   }
   search = '';
+  modal().innerHTML = ''; // a fresh dialog opens at the top, with its animation
   render();
   Modal.open(ID);
 }
@@ -165,6 +166,9 @@ function filtersSection() {
 }
 
 function render() {
+  // keep the scroll position: changing an option must not jump back to the top
+  const previous = $('.dialog', modal());
+  const scrollTop = previous?.scrollTop || 0;
   const { mode } = settings;
   const note = mode === 'flagmatch' ? t('fm_note_' + settings.subject)
     : mode === 'oceans' ? t('oceans_note')
@@ -186,6 +190,11 @@ function render() {
     </div>`;
   applySearch();
   updatePoolLine();
+  const dialog = $('.dialog', modal());
+  if (dialog && previous) {
+    dialog.classList.add('still'); // no "pop" animation when only an option changed
+    dialog.scrollTop = scrollTop;
+  }
 }
 
 function classicSections(note) {

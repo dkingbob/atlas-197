@@ -17,6 +17,7 @@
  *   stats    { [countryId]: { name|capital|location: { seen, ok, ko } } }
  *   srs      { [countryId]: { box 1..7, due: timestamp, lapses, last } }   Study mode (see game/srs.js)
  *   time     { total: ms, days: { 'YYYY-MM-DD': ms } }   active time on the site (see core/activity.js)
+ *   best     { [gameKey]: { score, at, label } }   best score of each game + settings
  *   asked    { [itemKey]: { t: last asked timestamp, n: times asked } }    game memory: games
  *            prefer what you have not seen for a while, so they do not repeat
  */
@@ -46,6 +47,7 @@ function defaultState() {
     srs: {},
     asked: {},
     time: { total: 0, days: {} },
+    best: {},
   };
 }
 
@@ -87,6 +89,8 @@ export function mergeStates(primary, other) {
   }
   out.srs = { ...b.srs };
   for (const [id, card] of Object.entries(a.srs)) if (!out.srs[id] || later(card.last, out.srs[id].last)) out.srs[id] = card;
+  out.best = { ...b.best };
+  for (const [key, v] of Object.entries(a.best)) if (!out.best[key] || v.score > out.best[key].score) out.best[key] = v;
   out.asked = { ...b.asked };
   for (const [key, v] of Object.entries(a.asked)) if (!out.asked[key] || later(v.t, out.asked[key].t)) out.asked[key] = v;
   const days = { ...b.time.days };
@@ -156,6 +160,16 @@ export const Store = {
     save();
   },
   allStats: () => state.stats,
+
+  /* Best scores */
+  /** Record a finished game's score. Returns { previous, isNew }. */
+  recordBest(key, score, label) {
+    const previous = state.best[key]?.score ?? null;
+    const isNew = score > 0 && (previous === null || score > previous);
+    if (isNew) { state.best[key] = { score, at: Date.now(), label }; save(); }
+    return { previous, isNew };
+  },
+  bestScores: () => state.best,
 
   /* Active time on the site */
   addActiveTime(ms, day) {
