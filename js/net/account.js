@@ -21,6 +21,7 @@ import { CONFIG } from '../config.js';
 import { Store, mergeStates } from '../core/store.js';
 
 const UPLOAD_DELAY_MS = 3000;
+const AUTH_KEY = 'atlas197.auth'; // where Supabase keeps the session in this browser
 export const PASSWORD_RULES = [
   { id: 'length', test: p => p.length >= 8 },
   { id: 'upper', test: p => /\p{Lu}/u.test(p) },
@@ -59,7 +60,7 @@ async function getClient() {
   if (client) return client;
   await loadLibrary();
   client = supabase.createClient(settings().url, settings().key, {
-    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'atlas197.auth' },
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: AUTH_KEY },
   });
   // link from a "reset your password" email: let the player choose a new one
   client.auth.onAuthStateChange(event => { if (event === 'PASSWORD_RECOVERY') recoveryListeners.forEach(fn => fn()); });
@@ -138,7 +139,10 @@ export const Account = {
 
   /** Restore the session saved in this browser (if any). Safe to call when not configured. */
   async restore() {
-    if (!isConfigured()) return;
+    // only load the account library for players who signed in on this browser before
+    // (or who arrive from a confirmation / password-reset email link)
+    const fromEmailLink = /access_token|type=recovery|code=/.test(location.hash + location.search);
+    if (!isConfigured() || (!localStorage.getItem(AUTH_KEY) && !fromEmailLink)) return;
     try {
       const db = await getClient();
       const { data } = await db.auth.getSession();
