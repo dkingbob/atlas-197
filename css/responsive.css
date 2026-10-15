@@ -71,3 +71,9 @@
   .nav{border-radius:18px}
   .nav button .ico{width:17px;height:17px}
 }
+@media (max-width:720px){
+  /* the Account button joins the first row: tighten it so everything fits */
+  .lang button{min-width:32px;padding:8px 6px;font-size:12.5px}
+  .account-btn{width:40px;height:40px}
+  .topbar{gap:5px}
+}

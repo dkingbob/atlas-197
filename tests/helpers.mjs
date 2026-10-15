@@ -54,8 +54,9 @@ async function routeOffline(context, vendorDir) {
  * `fastTimers` divides setTimeout delays so feedback pauses don't slow tests down.
  * `peerPort` points party games to a local signaling server (tests/peer-server.mjs).
  * `browser` reuses an open browser (several players in one test).
+ * `fakeAccounts` replaces Supabase with tests/fake-supabase.js (no network).
  */
-export async function openApp(url, { width = 1440, height = 900, mobile = false, fastTimers = false, peerPort = 0, browser: shared = null } = {}) {
+export async function openApp(url, { width = 1440, height = 900, mobile = false, fastTimers = false, peerPort = 0, browser: shared = null, fakeAccounts = false } = {}) {
   // Chrome hides local IPs behind mDNS names by default, which do not resolve in sandboxes.
   const browser = shared || await chromium.launch({ args: ['--disable-features=WebRtcHideLocalIpsWithMdns'] });
   const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile });
@@ -71,6 +72,7 @@ export async function openApp(url, { width = 1440, height = 900, mobile = false,
       window.ATLAS_PEER_OPTIONS = { host: '127.0.0.1', port, path: '/', secure: false, config: { iceServers: [] } };
     }, peerPort);
   }
+  if (fakeAccounts) await context.addInitScript({ path: new URL('./fake-supabase.js', import.meta.url).pathname });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));

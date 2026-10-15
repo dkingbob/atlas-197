@@ -17,6 +17,7 @@ Learn all **197 countries** — flags, capitals and where they are — on an int
 - **Track progress**: mark countries as known, keep a "hard list" that comes back more often, see your accuracy per subject.
 - **Time on Atlas** (in *Progress*): this session, today, total and days used. Only active time counts — a quiet stretch of 5+ minutes is removed entirely.
 - Explore: click a gray country to see its flag, click it again to put it back to gray.
+- **Accounts** (top-right *Account* button): sign up with email + password (8+ characters, a capital letter, a number). Progress is saved online and follows you on every device; signing in on a device that already has progress merges both.
 - **Game memory**: games start with what you haven't been asked for a while, so they don't repeat. Clear it, or back up / restore all progress as a file, from *Progress*.
 
 No framework, no build step: plain HTML, CSS and JavaScript modules.
@@ -95,6 +96,7 @@ js/
     mode-forms.js       Settings of Flags, Facts and Capital pin (uses form.js)
     speed-slider.js     The stepped, smooth speed slider (recap slideshow)
     party-dialog.js     Party: create/join a room, lobby, countdown, results
+    account-dialog.js   Sign in / create account / signed-in panel (+ celebration)
     progress-panel.js   "My progress" dialog
     components.js       Flag image, toast, modal helpers
     icons.js            Inline SVG icons
@@ -113,6 +115,7 @@ js/
     facts-pool.js       All clues for a country, with its names hidden
     capital-pin.js      Capital pin mode (distance scoring)
   net/
+    account.js          Accounts (Supabase): sign up / in, merge + sync progress
     peer-transport.js   PeerJS (WebRTC) loading and connections
     lobby.js            Party room: players, settings, start, scores, results
 tools/
@@ -133,6 +136,7 @@ tests/
   capitals.test.mjs     Capitals button and capital pin
   recap.test.mjs        Study recap: quiz first, slideshow and speed slider
   final-test.test.mjs   Final test after a Study session
+  account.test.mjs      Accounts with a fake Supabase (tests/fake-supabase.js)
   activity.test.mjs     Active time, click-again-to-gray, smooth wheel zoom
   peer-server.mjs       Local signaling server used by party.test.mjs
   helpers.mjs           Static server + browser setup for the tests
@@ -214,6 +218,18 @@ git clone --depth 1 https://github.com/factbook/factbook.json /tmp/factbook
 git clone --depth 1 https://github.com/mledoze/countries /tmp/countries
 node tools/build-stats.mjs /tmp/factbook /tmp/countries
 ```
+
+## Accounts (Supabase)
+
+Accounts are off until `SUPABASE_URL` and `SUPABASE_ANON_KEY` are filled in `js/config.js`. To switch them on:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. *SQL Editor* → paste and run `supabase/schema.sql` (one `progress` row per player, protected by row-level security).
+3. *Authentication → Sign In / Providers → Email*: minimum password length **8**, password requirements **lowercase, uppercase letters and digits**. Turn *Confirm email* off for instant accounts, or keep it on (players then get a "check your inbox" screen).
+4. *Authentication → URL Configuration*: Site URL `https://atlas-197.vercel.app`.
+5. *Project Settings → API*: copy the Project URL and the `anon` public key into `js/config.js`. The anon key is meant to be public; the database rules protect the data.
+
+Passwords are handled by Supabase (stored hashed); the app never stores them.
 
 ## Saved progress and a future backend
 

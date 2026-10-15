@@ -13,8 +13,10 @@ import { COUNTRIES, COUNTRY_BY_ID } from './data/countries/index.js';
 import { WATERS } from './data/waters.js';
 import { Store } from './core/store.js';
 import { Activity } from './core/activity.js';
+import { Account } from './net/account.js';
+import { AccountDialog } from './ui/account-dialog.js';
 import { Answers } from './core/answers.js';
-import { $, $$ } from './core/utils.js';
+import { $, $$, escapeHtml } from './core/utils.js';
 import { STRINGS } from './i18n/strings.js';
 import { t, lang, countryName, capitalName, waterName } from './i18n/i18n.js';
 import { MapView } from './map/map-view.js';
@@ -22,6 +24,7 @@ import { CountryPanel } from './ui/country-panel.js';
 import { ProgressPanel } from './ui/progress-panel.js';
 import { SetupDialog } from './ui/setup-dialog.js';
 import { Modal, Toast } from './ui/components.js';
+import { ICONS } from './ui/icons.js';
 import { Game } from './game/game.js';
 import { Rush } from './game/rush.js';
 import { Study } from './game/study.js';
@@ -60,10 +63,34 @@ function setLanguage(newLang) {
   ProgressPanel.refresh();
   SetupDialog.refresh();
   PartyDialog.refresh();
+  AccountDialog.refresh();
+  syncAccountButton();
   Game.refresh();
   Rush.refresh();
   Study.refresh();
   Object.values(ENGINES).forEach(engine => engine.refresh());
+}
+
+/* ---------- account ---------- */
+/** Header button: "Account" when signed out, the player's initial + name when signed in. */
+function syncAccountButton() {
+  const button = $('#account-btn');
+  const user = Account.user();
+  const name = Account.displayName();
+  button.classList.toggle('signed-in', Boolean(user));
+  button.querySelector('.a-avatar').innerHTML = user ? escapeHtml(name.slice(0, 1).toUpperCase()) : ICONS.user;
+  button.querySelector('.lbl-t').textContent = user ? name : t('accButton');
+  button.title = user ? t('accSignedInAs', { email: user.email }) : t('accButtonTip');
+}
+
+/** The account's progress was merged in: redraw everything with it. */
+function afterSignIn() {
+  setLanguage(Store.lang());
+  MapView.setDisplay(Store.pref('display') === 'flag' ? 'flag' : 'gray');
+  MapView.setNameMode(Store.pref('names') ? 'all' : 'revealed');
+  MapView.setCapitals(!inGame && Store.pref('capitals'));
+  syncHeaderButtons();
+  syncAccountButton();
 }
 
 /* ---------- display mode (flags / gray) & names ---------- */
@@ -170,6 +197,7 @@ function bindHeader() {
   });
   $('#names-btn').addEventListener('click', toggleNames);
   $('#capitals-btn').addEventListener('click', toggleCapitals);
+  $('#account-btn').addEventListener('click', () => AccountDialog.open());
   $('#lang-seg').addEventListener('click', e => {
     const button = e.target.closest('[data-lang]');
     if (button) setLanguage(button.dataset.lang);
@@ -252,6 +280,8 @@ async function boot() {
   Game.init({ onModeChange: setGameMode });
   Rush.init({ onModeChange: setGameMode });
   Study.init({ onModeChange: setGameMode });
+  AccountDialog.init({ onSignedIn: afterSignIn });
+  Account.onChange(syncAccountButton);
   Object.values(ENGINES).forEach(engine => engine.init({ onModeChange: setGameMode }));
   bindHeader();
   bindGlobalKeys();
@@ -267,6 +297,8 @@ async function boot() {
     $('#loader').classList.add('hide');
     const room = new URLSearchParams(location.search).get('room');
     if (room) PartyDialog.open({ code: room }); // invite link
+    syncAccountButton();
+    Account.restore().then(() => { if (Account.user()) afterSignIn(); }); // signed in earlier on this browser
   } catch (err) {
     console.error(err);
     showLoadError();
@@ -275,7 +307,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Activity, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Activity, Account, AccountDialog, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 

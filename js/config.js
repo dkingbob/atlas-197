@@ -21,6 +21,15 @@ export const CONFIG = {
   /** Official address. Progress is saved per address, so other addresses start empty. */
   HOME_URL: 'https://atlas-197.vercel.app/',
 
+  /**
+   * Accounts (Supabase). Paste the values from Supabase › Project Settings › API.
+   * The anon key is meant to be public: the database rules (supabase/schema.sql)
+   * are what protect each player's data. Empty = accounts turned off.
+   */
+  SUPABASE_URL: '',
+  SUPABASE_ANON_KEY: '',
+  SUPABASE_JS_URL: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.97.0',
+
   /** Party (multiplayer): WebRTC library, loaded only when a party is opened. */
   PEERJS_URL: 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',
   PARTY_MAX_PLAYERS: 4,

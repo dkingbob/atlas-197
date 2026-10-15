@@ -58,9 +58,54 @@ function withDefaults(saved) {
 let adapter = localStorageAdapter;
 let state = withDefaults(adapter.load());
 
-function save() { adapter.save(state); }
+const listeners = new Set();
+function save() {
+  adapter.save(state);
+  listeners.forEach(fn => fn());
+}
+
+const later = (a, b) => (a || 0) >= (b || 0);
+
+/**
+ * Combine two saved states (this device + the account in the cloud) so that
+ * nothing learned on either side is lost. Preferences come from `primary`.
+ */
+export function mergeStates(primary, other) {
+  const a = withDefaults(primary), b = withDefaults(other);
+  const out = { ...a };
+  out.known = { ...b.known, ...a.known };
+  out.hard = { ...b.hard };
+  for (const [id, w] of Object.entries(a.hard)) out.hard[id] = Math.max(w, out.hard[id] || 0);
+  for (const id of Object.keys(out.known)) delete out.hard[id];
+  out.stats = { ...b.stats };
+  for (const [id, subjects] of Object.entries(a.stats)) {
+    out.stats[id] = { ...(out.stats[id] || {}) };
+    for (const [subject, v] of Object.entries(subjects)) {
+      const o = out.stats[id][subject];
+      out.stats[id][subject] = !o || v.seen >= o.seen ? v : o;
+    }
+  }
+  out.srs = { ...b.srs };
+  for (const [id, card] of Object.entries(a.srs)) if (!out.srs[id] || later(card.last, out.srs[id].last)) out.srs[id] = card;
+  out.asked = { ...b.asked };
+  for (const [key, v] of Object.entries(a.asked)) if (!out.asked[key] || later(v.t, out.asked[key].t)) out.asked[key] = v;
+  const days = { ...b.time.days };
+  for (const [day, ms] of Object.entries(a.time.days)) days[day] = Math.max(ms, days[day] || 0);
+  out.time = { total: Math.max(a.time.total, b.time.total, Object.values(days).reduce((x, y) => x + y, 0)), days };
+  return out;
+}
 
 export const Store = {
+  /** Called after every change (used to sync the account). Returns an unsubscribe function. */
+  subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  /** A copy of everything saved. */
+  snapshot: () => structuredClone(state),
+  /** Replace everything (e.g. with the account's progress). */
+  replaceState(newState) { state = withDefaults(newState); save(); },
+  /** Is there anything worth keeping on this device? */
+  hasProgress: () => Boolean(Object.keys(state.known).length || Object.keys(state.stats).length
+    || Object.keys(state.srs).length || Object.keys(state.hard).length),
+
   /** Swap the persistence backend (see top of file). */
   setAdapter(newAdapter) { adapter = newAdapter; state = withDefaults(adapter.load()); save(); },
 
