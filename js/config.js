@@ -26,8 +26,8 @@ export const CONFIG = {
    * The anon key is meant to be public: the database rules (supabase/schema.sql)
    * are what protect each player's data. Empty = accounts turned off.
    */
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://uzwgxwdbnypnwuyhmhkl.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6d2d4d2Ribnlwbnd1eWhtaGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjQ0MTksImV4cCI6MjEwNzY0MDQxOX0.gbFDuFnzqHVhhnS5J5nBUn7v3wWMRXkJk5PIuPSPXso',
   SUPABASE_JS_URL: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.97.0',
 
   /** Party (multiplayer): WebRTC library, loaded only when a party is opened. */
