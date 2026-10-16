@@ -31,6 +31,7 @@
 
 <main id="map-wrap" aria-label="World map">
   <div id="map-layer"><svg id="map" class="mode-gray" role="img"></svg></div>
+  <div id="select-rect" aria-hidden="true"></div>
 </main>
 <div id="tooltip" role="tooltip"></div>
 
@@ -60,6 +61,7 @@
 </header>
 
 <div class="zoom-ctrl glass">
+  <button id="select-btn" data-i18n-title="selTip" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M10 4h4M10 20h4M4 10v4M20 10v4"/></svg></button>
   <button id="zoom-in" data-i18n-title="zoomIn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="zoom-out" data-i18n-title="zoomOut"><svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
   <button id="zoom-reset" data-i18n-title="resetView"><svg class="ico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
@@ -82,6 +84,7 @@
   <button data-act="replay"><svg class="ico" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4v4.5H8"/></svg><span class="lbl-t" data-i18n="gcReplay"></span></button>
   <button data-act="leave"><svg class="ico" viewBox="0 0 24 24"><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15M10 16.5 5.5 12 10 7.5M5.5 12H15"/></svg><span class="lbl-t" data-i18n="gcLeave"></span></button>
 </div>
+<div id="select-bar" class="glass" aria-live="polite"></div>
 <div id="study-hud" class="glass"></div>
 <section id="study-card" class="glass" aria-live="polite"></section>
 <section id="recap-card" class="glass" aria-live="polite"></section>

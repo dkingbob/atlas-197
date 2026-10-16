@@ -77,3 +77,10 @@
   .account-btn{width:40px;height:40px}
   .topbar{gap:5px}
 }
+@media (max-width:720px){
+  #select-bar{bottom:8px;padding:10px 12px}
+  .sel-head{flex-wrap:wrap;gap:6px 10px}
+  .sel-head small{order:3;flex-basis:100%}
+  .sel-flags img:nth-child(n+5){display:none}
+  .sel-actions .btn.sm{padding:7px 10px;font-size:12.5px}
+}

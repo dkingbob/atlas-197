@@ -78,3 +78,11 @@
 #map .cap-dot{fill:#13233a;stroke:#fff;stroke-width:1.2px;vector-effect:non-scaling-stroke}
 #map .cap-lbl{font-family:var(--font);font-weight:700;font-style:italic;fill:#7a3e00;paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-linejoin:round}
 #map .cap.dim{opacity:.3}
+/* Box select (explore): selected countries, the rectangle being drawn */
+#map .country.selected{fill:#6d5bd0;stroke:#fff;stroke-width:1.2px}
+#map .country.selected.flagged{fill:var(--flag);stroke:#6d5bd0;stroke-width:3px}
+#map .marker.selected .dot{fill:#6d5bd0;stroke:#fff}
+body.selecting #map-wrap{cursor:crosshair}
+#select-rect{position:absolute;display:none;pointer-events:none;z-index:5;border:2px dashed #6d5bd0;background:rgba(109,91,208,.14);border-radius:6px}
+#select-rect.show{display:block}
+#select-rect.removing{border-color:var(--bad);background:rgba(220,38,38,.12)}

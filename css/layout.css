@@ -38,3 +38,19 @@ body.in-game .legend{display:none}
 
 #toast{position:fixed;z-index:120;left:50%;top:calc(var(--top) + 64px);transform:translate(-50%,-20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:var(--shadow);transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+#select-btn.on{background:#6d5bd0;color:#fff}
+#select-bar{position:fixed;z-index:29;left:50%;bottom:16px;transform:translate(-50%,calc(100% + 30px));visibility:hidden;width:min(760px,calc(100% - 24px));border-radius:20px;padding:12px 14px;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s}
+#select-bar.show{transform:translate(-50%,0);visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.sel-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sel-head b{font-size:15px}
+.sel-head small{color:var(--muted);font-weight:700}
+.sel-flags{display:flex}
+.sel-flags img{width:28px;height:19px;object-fit:cover;border-radius:3px;margin-right:-6px;box-shadow:0 0 0 2px #fff}
+.sel-more{margin-left:10px;font-size:12px;font-weight:800;color:var(--muted)}
+.sel-x{margin-left:auto;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#eef2f6}
+.sel-x .ico{width:16px;height:16px}
+.sel-actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn-ok{background:var(--ok-soft);color:#11733a}
+.sel-help{display:flex;align-items:center;gap:10px;margin:2px 4px;font-weight:700;font-size:14px;color:var(--ink-2)}
+.sel-help .ico{width:22px;height:22px;color:#6d5bd0;flex:none}
+body.selecting .legend{display:none}

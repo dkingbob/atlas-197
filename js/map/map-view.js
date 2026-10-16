@@ -53,7 +53,8 @@ let center = CONFIG.DEFAULT_CENTER;
 let transform = d3.zoomIdentity;      // follows the gesture live
 let committed = d3.zoomIdentity;      // what the SVG content is actually drawn with
 let commitTimer = 0, labelFrame = 0;
-let animating = 0;                    // number of running programmatic zoom animations
+let animating = 0;
+let boxSelect = false;                // drag = draw a selection rectangle (see ui/box-select.js)                    // number of running programmatic zoom animations
 let wheelTarget = null, wheelFrame = 0;
 let display = 'gray';                 // 'gray' | 'flag'
 let nameMode = 'all';                 // 'all' | 'revealed' | 'none'
@@ -108,7 +109,10 @@ function init(topology) {
     .on('zoom', event => { transform = event.transform; preview(); })
     .on('end', () => { clearTimeout(commitTimer); commitTimer = setTimeout(commit, COMMIT_DELAY_MS); });
   // the wheel is handled by smoothWheel() (gliding) instead of d3's jumpy steps
-  zoom.filter(event => event.type !== 'wheel' && !event.ctrlKey && !event.button);
+  // box-select mode (or Shift held): the drag draws a rectangle instead of moving the map
+  zoom.filter(event => event.type !== 'wheel' && !event.ctrlKey && !event.button
+    && !(event.type === 'mousedown' || event.type === 'pointerdown' ? boxSelect || event.shiftKey : false)
+    && !(event.type === 'touchstart' && boxSelect && event.touches?.length === 1));
   d3.select(wrap).call(zoom).on('dblclick.zoom', null);
   wrap.addEventListener('wheel', smoothWheel, { passive: false });
 
@@ -619,6 +623,13 @@ export const MapView = {
 
   /* game states */
   setState,
+  /** Drag draws a selection rectangle instead of moving the map. */
+  setBoxSelect(on) { boxSelect = Boolean(on); },
+  /** Where a place's name / marker is on screen (px, relative to the map). */
+  screenXY(rec) {
+    const xy = rec.isSmall || !rec.feature ? rec.markerXY : rec.labelXY;
+    return xy ? transform.apply(xy) : null;
+  },
   clearState,
   flash(rec, correct, ms = 1300) {
     const cls = correct ? 'flash-ok' : 'flash-bad';

@@ -61,8 +61,9 @@ const continentOrder = id => CONTINENT_IDS.indexOf(id);
 export function studyDeck(settings) {
   const levels = settings.levels?.length ? settings.levels : LEVEL_IDS;
   const conts = settings.conts?.length ? settings.conts : CONTINENT_IDS;
+  const only = settings.ids ? new Set(settings.ids) : null; // countries picked on the map (box select)
   return COUNTRIES
-    .filter(c => levels.includes(levelOf(c.id)) && conts.includes(c.continent))
+    .filter(c => (only ? only.has(c.id) : levels.includes(levelOf(c.id)) && conts.includes(c.continent)))
     .sort((a, b) => levelOf(a.id) - levelOf(b.id) || continentOrder(a.continent) - continentOrder(b.continent)
       || a.name.en.localeCompare(b.name.en))
     .map(c => c.id);

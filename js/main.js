@@ -15,6 +15,8 @@ import { Store } from './core/store.js';
 import { Activity } from './core/activity.js';
 import { Account } from './net/account.js';
 import { AccountDialog } from './ui/account-dialog.js';
+import { BoxSelect } from './ui/box-select.js';
+import { DEFAULT_STUDY_SETTINGS } from './game/study.js';
 import { Answers } from './core/answers.js';
 import { $, $$, escapeHtml } from './core/utils.js';
 import { STRINGS } from './i18n/strings.js';
@@ -64,6 +66,7 @@ function setLanguage(newLang) {
   SetupDialog.refresh();
   PartyDialog.refresh();
   AccountDialog.refresh();
+  BoxSelect.refresh();
   syncAccountButton();
   Game.refresh();
   Rush.refresh();
@@ -178,6 +181,7 @@ function setGameMode(on) {
   inGame = on;
   MapView.setCapitals(!on && Store.pref('capitals'));
   syncGameControls();
+  if (on) BoxSelect.stop();
   document.body.classList.toggle('in-game', on);
   const playing = on ? (PartyDialog.isInParty() ? 'party' : playNav) : 'explore';
   $$('#nav [data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === playing));
@@ -261,6 +265,7 @@ function bindMap() {
     if (Study.isRunning()) return Study.onPlaceClick(rec);
     if (runningEngine()) return runningEngine().onPlaceClick(rec, e);
     if (Modal.isOpen('end-modal')) return;
+    if (BoxSelect.onPlaceClick(rec)) return;
     explorePlace(rec);
   });
   MapView.onWaterClick(lonLat => {
@@ -313,6 +318,11 @@ async function boot() {
   Rush.init({ onModeChange: setGameMode });
   Study.init({ onModeChange: setGameMode });
   AccountDialog.init({ onSignedIn: afterSignIn });
+  BoxSelect.init({
+    // "Learn": Study mode with exactly these countries (new ones learned, seen ones quizzed again)
+    onLearn: ids => startGame({ mode: 'study', study: { ...DEFAULT_STUDY_SETTINGS, ids, newCount: ids.length, recap: 'quiz' } }),
+    onChange: () => ProgressPanel.refresh(),
+  });
   Account.onChange(syncAccountButton);
   Object.values(ENGINES).forEach(engine => engine.init({ onModeChange: setGameMode }));
   bindHeader();
@@ -339,7 +349,7 @@ async function boot() {
 
 /* Handle for the browser console and the end-to-end tests. Not used by the app itself. */
 window.atlas = {
-  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Activity, Account, AccountDialog, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
+  CONFIG, COUNTRIES, COUNTRY_BY_ID, WATERS, STRINGS, Store, Answers, MapView, Game, Rush, Study, Activity, Account, AccountDialog, BoxSelect, Recap, FinalTest, FlagQuiz, Facts, CapitalPin, CountryPanel,
   SetupDialog, PartyDialog, ProgressPanel, setLanguage, t, countryName, capitalName, waterName,
 };
 
